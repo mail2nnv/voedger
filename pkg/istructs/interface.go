@@ -44,6 +44,8 @@ type IAppStructs interface {
 
 	ViewRecords() IViewRecords
 
+	Recovers() IRecovers
+
 	// ************************************************************
 	// Runtime helpers
 
