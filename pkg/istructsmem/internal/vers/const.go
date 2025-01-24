@@ -17,6 +17,9 @@ const (
 	// version key for singletons system view
 	SysSingletonsVersion
 
-	// version key for uniques system view
+	// version key for uniques system view (reserved)
 	SysUniquesVersion
+
+	// version key for singletons system parttition recovery points
+	SysRecoversVersion
 )

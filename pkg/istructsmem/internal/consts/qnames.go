@@ -15,4 +15,5 @@ const (
 	SysView_WLog                            // application WLog view
 	SysView_SingletonIDs                    // application singletons IDs view
 	SysView_RESERVED                        // SysView_UniquesIDs (application uniques IDs view) deprecated
+	SysView_Recovers                        // application Partitions Recover Points view
 )
