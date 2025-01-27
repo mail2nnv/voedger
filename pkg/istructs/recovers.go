@@ -7,8 +7,8 @@ package istructs
 
 // Partition recovers
 type IRecovers interface {
-	Get(PartitionID) PartitionRecoveryPoint
-	Put(PartitionID, PartitionRecoveryPoint)
+	Get(PartitionID, *PartitionRecoveryPoint) error
+	Put(PartitionID, PartitionRecoveryPoint) error
 }
 
 // Partition recovery point

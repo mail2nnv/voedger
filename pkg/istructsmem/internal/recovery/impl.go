@@ -7,110 +7,70 @@ package recovery
 
 import (
 	"context"
-	"encoding/binary"
-	"encoding/json"
-	"fmt"
-	"io"
-	"sync"
 
-	"github.com/voedger/voedger/pkg/istorage"
 	"github.com/voedger/voedger/pkg/istructs"
-	"github.com/voedger/voedger/pkg/istructsmem/internal/consts"
-	"github.com/voedger/voedger/pkg/istructsmem/internal/utils"
-	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
 )
 
 // # Supports:
 //   - istructs.IRecovers
 type Recovers struct {
-	mutex   sync.RWMutex
-	storage istorage.IAppStorage
-	points  map[istructs.PartitionID]istructs.PartitionRecoveryPoint
+	vr istructs.IViewRecords
 }
 
-func NewRecovers(storage istorage.IAppStorage) *Recovers {
+func NewRecovers(vr istructs.IViewRecords) *Recovers {
 	return &Recovers{
-		mutex:   sync.RWMutex{},
-		storage: storage,
-		points:  make(map[istructs.PartitionID]istructs.PartitionRecoveryPoint),
+		vr: vr,
 	}
 }
 
-func (r *Recovers) Get(p istructs.PartitionID) istructs.PartitionRecoveryPoint {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (r Recovers) Get(pid istructs.PartitionID, point *istructs.PartitionRecoveryPoint) error {
+	kb := r.vr.KeyBuilder(prp_ViewName)
+	kb.PutInt64(prp_PID, int64(pid))
 
-	if p, ok := r.points[p]; ok {
-		return p
-	}
-	return istructs.PartitionRecoveryPoint{}
-}
-
-func (r *Recovers) Put(p istructs.PartitionID, point istructs.PartitionRecoveryPoint) (err error) {
-	var pk, cc, data []byte
-	pk = utils.ToBytes(consts.SysView_Recovers, ver01)
-	cc = utils.ToBytes(uint64(p))
-	if data, err = json.Marshal(point); err != nil {
-		return err
-	}
-
-	if err = r.storage.Put(pk, cc, data); err != nil {
-		return err
-	}
-
-	r.mutex.Lock()
-	r.points[p] = point
-	r.mutex.Unlock()
-
-	return nil
-}
-
-// Prepare prepares the recovery points.
-//
-// Should once be called before other methods.
-func (r *Recovers) Prepare(versions *vers.Versions) error {
-	ver := versions.Get(vers.SysRecoversVersion)
-	switch ver {
-	case vers.UnknownVersion: // no sys.Recovers storage exists
-		return nil
-	case ver01:
-		if err := r.load01(); err != nil {
-			return err
+	return r.vr.Read(context.Background(), 0, kb, func(key istructs.IKey, value istructs.IValue) error {
+		switch ws := istructs.WSID(key.AsInt64(prp_WSID)); ws {
+		case 0:
+			point.PLogOffset = istructs.Offset(value.AsInt64(prp_Offset))
+		default:
+			point.Workspaces[ws] = istructs.WorkspaceRecoveryPoint{
+				WLogOffset:    istructs.Offset(value.AsInt64(prp_Offset)),
+				BaseRecordID:  value.AsRecordID(prp_BaseRecordID),
+				CBaseRecordID: value.AsRecordID(prp_CBaseRecordID),
+			}
 		}
-	default:
-		return fmt.Errorf("unknown version of Recovery system view (%v): %w", ver, vers.ErrorInvalidVersion)
-	}
-
-	if ver != latestVersion {
-		r.store()
-	}
-
-	return nil
+		return nil
+	})
 }
 
-func (r *Recovers) load01() error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (r Recovers) Put(pid istructs.PartitionID, point istructs.PartitionRecoveryPoint) error {
 
-	pk := utils.ToBytes(consts.SysView_Recovers, ver01)
-	return r.storage.Read(context.Background(), pk, nil, nil,
-		func(ccols []byte, data []byte) (err error) {
-			if len(ccols) != 8 {
-				return fmt.Errorf("unexpected length of columns (%v) in Recovers system view: %w", len(ccols), io.ErrUnexpectedEOF)
-			}
+	wsKey := func(ws istructs.WSID) istructs.IKeyBuilder {
+		kb := r.vr.KeyBuilder(prp_ViewName)
+		kb.PutInt64(prp_PID, int64(pid))
+		kb.PutInt64(prp_WSID, int64(ws))
+		return kb
+	}
 
-			pid := istructs.PartitionID(binary.BigEndian.Uint64(ccols))
-			point := istructs.PartitionRecoveryPoint{}
+	wsValue := func(ws istructs.WorkspaceRecoveryPoint) istructs.IValueBuilder {
+		vb := r.vr.NewValueBuilder(prp_ViewName)
+		vb.PutInt64(prp_Offset, int64(ws.WLogOffset))
+		vb.PutRecordID(prp_BaseRecordID, ws.BaseRecordID)
+		vb.PutRecordID(prp_CBaseRecordID, ws.CBaseRecordID)
+		return vb
+	}
 
-			if err := json.Unmarshal(data, &point); err != nil {
-				return fmt.Errorf("error unmarshalling PartitionRecoveryPoint: %w", err)
-			}
+	batch := make([]istructs.ViewKV, 0, len(point.Workspaces)+1)
+	batch = append(batch, istructs.ViewKV{
+		Key:   wsKey(0),
+		Value: wsValue(istructs.WorkspaceRecoveryPoint{WLogOffset: point.PLogOffset}),
+	})
 
-			r.points[pid] = point
-
-			return nil
+	for ws, wsPoint := range point.Workspaces {
+		batch = append(batch, istructs.ViewKV{
+			Key:   wsKey(ws),
+			Value: wsValue(wsPoint),
 		})
-}
+	}
 
-func (r *Recovers) store() {
+	return r.vr.PutBatch(0, batch)
 }

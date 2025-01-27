@@ -5,11 +5,16 @@
 
 package recovery
 
-import "github.com/voedger/voedger/pkg/istructsmem/internal/vers"
+import (
+	"github.com/voedger/voedger/pkg/appdef"
+)
 
-// Recovers system view versions
-const (
-	ver01 vers.VersionValue = vers.UnknownVersion + 1
-
-	latestVersion = ver01
+// Partition recovery points view
+var (
+	prp_ViewName      appdef.QName     = appdef.NewQName(appdef.SysPackage, "prpView")
+	prp_PID           appdef.FieldName = "pid"
+	prp_WSID          appdef.FieldName = "wsid"
+	prp_Offset        appdef.FieldName = "offset"
+	prp_BaseRecordID  appdef.FieldName = "baseRecordID"
+	prp_CBaseRecordID appdef.FieldName = "cBaseRecordID"
 )

@@ -464,6 +464,7 @@ func (as *implIAppStructs) AppDef() appdef.IAppDef                             {
 func (as *implIAppStructs) Events() istructs.IEvents                           { panic("") }
 func (as *implIAppStructs) Records() istructs.IRecords                         { return as.records }
 func (as *implIAppStructs) ViewRecords() istructs.IViewRecords                 { return as.views }
+func (as *implIAppStructs) Recovers() istructs.IRecovers                       { panic("") }
 func (as *implIAppStructs) ObjectBuilder(appdef.QName) istructs.IObjectBuilder { panic("") }
 func (as *implIAppStructs) Resources() istructs.IResources                     { panic("") }
 func (as *implIAppStructs) ClusterAppID() istructs.ClusterAppID                { panic("") }
