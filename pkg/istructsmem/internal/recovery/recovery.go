@@ -79,7 +79,7 @@ func (p *PartitionRecoveryPoint) Update(plog istructs.Offset, wsID istructs.WSID
 	if wsID != 0 {
 		ws, ok := p.workspaces[wsID]
 		if !ok {
-			ws := NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
+			ws = NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
 			p.workspaces[wsID] = ws
 		}
 		wsp := ws.(*WorkspaceRecoveryPoint)
