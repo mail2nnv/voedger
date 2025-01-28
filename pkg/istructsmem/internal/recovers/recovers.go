@@ -114,7 +114,7 @@ func (p *PartitionRecoveryPoint) get() error {
 
 func (p PartitionRecoveryPoint) key() istructs.IKeyBuilder { return p.k }
 
-func (p *PartitionRecoveryPoint) put() (err error) {
+func (p *PartitionRecoveryPoint) put() error {
 	batch := make([]istructs.ViewKV, 0, len(p.modified)+1)
 	batch = append(batch, istructs.ViewKV{
 		Key:   p.key(),
@@ -128,10 +128,11 @@ func (p *PartitionRecoveryPoint) put() (err error) {
 			Value: w.value(),
 		})
 	}
-	if err = p.vr.PutBatch(istructs.NullWSID, batch); err == nil {
-		clear(p.modified)
+	if err := p.vr.PutBatch(istructs.NullWSID, batch); err != nil {
+		return err
 	}
-	return err
+	clear(p.modified)
+	return nil
 }
 
 func (p *PartitionRecoveryPoint) value() istructs.IValueBuilder {

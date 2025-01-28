@@ -130,4 +130,19 @@ func TestRecovers(t *testing.T) {
 		_, err := recovers.Get(appPartID)
 		require.Error(err, require.Is(testError))
 	})
+
+	t.Run("Should be fail to Put PRP if storage put fails", func(t *testing.T) {
+		testError := errors.New("test error")
+		wsID := istructs.FirstBaseAppWSID + 5
+		prp.Update(
+			plogSize,
+			wsID,
+			testWS[5].wLog+1,
+			testWS[5].id+2,
+			testWS[5].cid+2,
+		)
+		storage.SchedulePutError(testError, nil, utils.ToBytes(wsID))
+		err := recovers.Put(prp)
+		require.Error(err, require.Is(testError))
+	})
 }
