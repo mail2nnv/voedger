@@ -1,9 +1,9 @@
 
-# Recovery Package
+# Recovers Package
 
 ## Overview
 
-The `recovery` package is responsible for managing partition recovery points (PRP) in the system. It provides functionality to store and retrieve recovery points for partitions and workspaces. This ensures that the system can recover to a consistent state after a failure.
+The `recovers` package is responsible for managing partition recovery points (PRP) in the system. It provides functionality to store and retrieve recovery points for partitions and workspaces. This ensures that the system can recover to a consistent state after a failure.
 
 ## PRP View Structure
 

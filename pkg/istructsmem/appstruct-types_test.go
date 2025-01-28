@@ -317,6 +317,10 @@ func Test_NewAppStructs(t *testing.T) {
 			require.Equal(id, str.ClusterAppID())
 			require.Equal(wsCount, str.NumAppWorkspaces())
 
+			prp, err := str.Recovers().Get(1)
+			require.NoError(err)
+			require.Zero(prp.PLogOffset())
+
 			for resName := range str.Resources().Resources {
 				require.Fail("unexpected resource", resName)
 			}

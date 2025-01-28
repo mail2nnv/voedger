@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package recovery
+package recovers
 
 import (
 	"context"

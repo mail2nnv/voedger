@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package recovery_test
+package recovers_test
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ import (
 	"github.com/voedger/voedger/pkg/iratesce"
 	"github.com/voedger/voedger/pkg/istructs"
 	"github.com/voedger/voedger/pkg/istructsmem"
-	"github.com/voedger/voedger/pkg/istructsmem/internal/recovery"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/recovers"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/teststore"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/utils"
 	payloads "github.com/voedger/voedger/pkg/itokens-payloads"
@@ -24,7 +24,7 @@ import (
 
 func TestRecovers(t *testing.T) {
 	// test interface compatibility
-	var _ istructs.IRecovers = &recovery.Recovers{}
+	var _ istructs.IRecovers = &recovers.Recovers{}
 
 	require := require.New(t)
 

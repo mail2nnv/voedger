@@ -19,7 +19,7 @@ import (
 	"github.com/voedger/voedger/pkg/istructs"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/descr"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/plogcache"
-	"github.com/voedger/voedger/pkg/istructsmem/internal/recovery"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/recovers"
 	payloads "github.com/voedger/voedger/pkg/itokens-payloads"
 )
 
@@ -96,7 +96,7 @@ type appStructsType struct {
 	events      appEventsType
 	records     appRecordsType
 	viewRecords appViewRecords
-	recovers    *recovery.Recovers
+	recovers    *recovers.Recovers
 	buckets     irates.IBuckets
 	descr       *descr.Application
 	appTokens   istructs.IAppTokens
@@ -111,7 +111,7 @@ func newAppStructs(appCfg *AppConfigType, buckets irates.IBuckets, appTokens ist
 	app.events = newEvents(&app)
 	app.records = newRecords(&app)
 	app.viewRecords = newAppViewRecords(&app)
-	app.recovers = recovery.New(&app.viewRecords)
+	app.recovers = recovers.New(&app.viewRecords)
 	appCfg.app = &app
 	return &app
 }
