@@ -131,6 +131,7 @@ func (app *appStructsType) Records() istructs.IRecords {
 	return &app.records
 }
 
+// istructs.IAppStructs.Recovers
 func (app appStructsType) Recovers() istructs.IRecovers {
 	return app.recovers
 }
