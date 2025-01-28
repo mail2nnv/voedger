@@ -47,7 +47,7 @@ type PartitionRecoveryPoint struct {
 	pid        istructs.PartitionID
 	plog       istructs.Offset
 	workspaces map[istructs.WSID]istructs.IWorkspaceRecoveryPoint
-	modified   map[istructs.WSID]*WorkspaceRecoveryPoint
+	modified   map[istructs.WSID]istructs.IWorkspaceRecoveryPoint
 }
 
 func NewPartitionRecoveryPoint(vr istructs.IViewRecords, pid istructs.PartitionID) *PartitionRecoveryPoint {
@@ -58,7 +58,7 @@ func NewPartitionRecoveryPoint(vr istructs.IViewRecords, pid istructs.PartitionI
 		pid:        pid,
 		plog:       istructs.NullOffset,
 		workspaces: make(map[istructs.WSID]istructs.IWorkspaceRecoveryPoint),
-		modified:   make(map[istructs.WSID]*WorkspaceRecoveryPoint),
+		modified:   make(map[istructs.WSID]istructs.IWorkspaceRecoveryPoint),
 	}
 	p.k.PutInt64(sys.Prp_PID, int64(pid))
 	p.k.PutInt64(sys.Prp_WSID, int64(istructs.NullWSID))
@@ -77,14 +77,13 @@ func (p *PartitionRecoveryPoint) Update(plog istructs.Offset, wsID istructs.WSID
 	p.plog = plog
 
 	if wsID != 0 {
-		ws, ok := p.workspaces[wsID]
+		w, ok := p.workspaces[wsID]
 		if !ok {
-			ws = NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
-			p.workspaces[wsID] = ws
+			w = NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
+			p.workspaces[wsID] = w
 		}
-		wsp := ws.(*WorkspaceRecoveryPoint)
-		wsp.update(wlog, id, cid)
-		p.modified[wsID] = wsp
+		w.(*WorkspaceRecoveryPoint).update(wlog, id, cid)
+		p.modified[wsID] = w
 	}
 }
 
@@ -101,13 +100,13 @@ func (p *PartitionRecoveryPoint) get() error {
 		case istructs.NullWSID:
 			p.plog = ofs
 		default:
-			ws := NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
-			ws.update(
+			w := NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
+			w.update(
 				ofs,
 				value.AsRecordID(sys.Prp_BaseRecordID),
 				value.AsRecordID(sys.Prp_CBaseRecordID),
 			)
-			p.workspaces[wsID] = ws
+			p.workspaces[wsID] = w
 		}
 		return nil
 	})
@@ -122,10 +121,11 @@ func (p *PartitionRecoveryPoint) put() (err error) {
 		Value: p.value(),
 	})
 
-	for _, ws := range p.modified {
+	for _, w := range p.modified {
+		w := w.(*WorkspaceRecoveryPoint)
 		batch = append(batch, istructs.ViewKV{
-			Key:   ws.key(),
-			Value: ws.value(),
+			Key:   w.key(),
+			Value: w.value(),
 		})
 	}
 	if err = p.vr.PutBatch(istructs.NullWSID, batch); err == nil {
