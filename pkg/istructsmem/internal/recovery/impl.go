@@ -60,6 +60,7 @@ func NewPartitionRecoveryPoint(vr istructs.IViewRecords, pid istructs.PartitionI
 		modified:   make(map[istructs.WSID]*WorkspaceRecoveryPoint),
 	}
 	p.k.PutInt64(prp_PID, int64(pid))
+	p.k.PutInt64(prp_WSID, int64(istructs.NullWSID))
 	return p
 }
 
@@ -86,26 +87,29 @@ func (p *PartitionRecoveryPoint) Update(plog istructs.Offset, wsID istructs.WSID
 	}
 }
 
-func (p *PartitionRecoveryPoint) get() (err error) {
-	if err = p.vr.Read(context.Background(), 0, p.key(), func(key istructs.IKey, value istructs.IValue) error {
-		switch ws := istructs.WSID(key.AsInt64(prp_WSID)); ws {
+func (p *PartitionRecoveryPoint) get() error {
+	clear(p.modified)
+	clear(p.workspaces)
+
+	k := p.vr.KeyBuilder(prp_ViewName)
+	k.PutInt64(prp_PID, int64(p.pid))
+
+	return p.vr.Read(context.Background(), istructs.NullWSID, k, func(key istructs.IKey, value istructs.IValue) error {
+		ofs := istructs.Offset(value.AsInt64(prp_Offset))
+		switch wsID := istructs.WSID(key.AsInt64(prp_WSID)); wsID {
 		case istructs.NullWSID:
-			p.plog = istructs.Offset(value.AsInt64(prp_Offset))
+			p.plog = ofs
 		default:
-			p.Update(
-				p.PLogOffset(),
-				ws,
-				istructs.Offset(value.AsInt64(prp_Offset)),
+			ws := NewWorkspaceRecoveryPoint(p.vr, p.PID(), wsID)
+			ws.update(
+				ofs,
 				value.AsRecordID(prp_BaseRecordID),
 				value.AsRecordID(prp_CBaseRecordID),
 			)
+			p.workspaces[wsID] = ws
 		}
 		return nil
-	}); err == nil {
-		clear(p.modified)
-	}
-
-	return err
+	})
 }
 
 func (p PartitionRecoveryPoint) key() istructs.IKeyBuilder { return p.k }
@@ -123,7 +127,7 @@ func (p *PartitionRecoveryPoint) put() (err error) {
 			Value: ws.value(),
 		})
 	}
-	if err = p.vr.PutBatch(0, batch); err == nil {
+	if err = p.vr.PutBatch(istructs.NullWSID, batch); err == nil {
 		clear(p.modified)
 	}
 	return err
