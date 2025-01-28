@@ -44,5 +44,5 @@ type IWorkspaceRecoveryPoint interface {
 	BaseRecordID() RecordID
 
 	// Last CDoc (CRecord) base record ID
-	CBaseRecordID() RecordID
+	BaseCRecordID() RecordID
 }

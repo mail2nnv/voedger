@@ -170,7 +170,7 @@ func (w WorkspaceRecoveryPoint) WLogOffset() istructs.Offset { return w.wlog }
 
 func (w WorkspaceRecoveryPoint) BaseRecordID() istructs.RecordID { return w.id }
 
-func (w WorkspaceRecoveryPoint) CBaseRecordID() istructs.RecordID { return w.cid }
+func (w WorkspaceRecoveryPoint) BaseCRecordID() istructs.RecordID { return w.cid }
 
 func (w WorkspaceRecoveryPoint) key() istructs.IKeyBuilder { return w.k }
 

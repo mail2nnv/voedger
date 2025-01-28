@@ -93,7 +93,7 @@ func TestRecovers(t *testing.T) {
 			require.Equal(wsID, wsRP.WSID())
 			require.Equal(testWS[wsIdx].wLog, wsRP.WLogOffset())
 			require.Equal(testWS[wsIdx].id, wsRP.BaseRecordID())
-			require.Equal(testWS[wsIdx].cid, wsRP.CBaseRecordID())
+			require.Equal(testWS[wsIdx].cid, wsRP.BaseCRecordID())
 
 			testWS[wsIdx].wLog++
 			testWS[wsIdx].id += 2
@@ -120,7 +120,7 @@ func TestRecovers(t *testing.T) {
 			require.Equal(wsRP.WSID(), wsRP1.WSID())
 			require.Equal(wsRP.WLogOffset(), wsRP1.WLogOffset())
 			require.Equal(wsRP.BaseRecordID(), wsRP1.BaseRecordID())
-			require.Equal(wsRP.CBaseRecordID(), wsRP1.CBaseRecordID())
+			require.Equal(wsRP.BaseCRecordID(), wsRP1.BaseCRecordID())
 		}
 	})
 
