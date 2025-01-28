@@ -18,7 +18,7 @@ type Recovers struct {
 	vr istructs.IViewRecords
 }
 
-func NewRecovers(vr istructs.IViewRecords) *Recovers {
+func New(vr istructs.IViewRecords) *Recovers {
 	return &Recovers{
 		vr: vr,
 	}

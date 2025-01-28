@@ -111,7 +111,7 @@ func newAppStructs(appCfg *AppConfigType, buckets irates.IBuckets, appTokens ist
 	app.events = newEvents(&app)
 	app.records = newRecords(&app)
 	app.viewRecords = newAppViewRecords(&app)
-	app.recovers = recovery.NewRecovers(&app.viewRecords)
+	app.recovers = recovery.New(&app.viewRecords)
 	appCfg.app = &app
 	return &app
 }
