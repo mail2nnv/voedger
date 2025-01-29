@@ -52,6 +52,25 @@ func (g *implIIDGenerator) NextID(rawID istructs.RecordID, t appdef.IType) (stor
 	return storageID, nil
 }
 
+func (g *implIIDGenerator) Update(id istructs.RecordID, t appdef.TypeKind) {
+	if id >= istructs.MinClusterRecordID {
+		// syncID>=322680000000000 -> the id is cluster record ID, includes generator ID, not base record id
+		return
+	}
+	switch t {
+	case appdef.TypeKind_CDoc, appdef.TypeKind_CRecord:
+		g.nextCDocCRecordBaseID = id + 1
+	case appdef.TypeKind_ODoc, appdef.TypeKind_ORecord:
+		if id >= g.nextBaseID {
+			// we do not know the order the IDs were issued for ODoc with ORecords
+			// so let's bump if syncID is actually next
+			g.nextBaseID = id + 1
+		}
+	default: // WDoc, WRecord
+		g.nextBaseID = id + 1
+	}
+}
+
 func (g *implIIDGenerator) UpdateOnSync(syncID istructs.RecordID, t appdef.TypeKind) {
 	if syncID < istructs.MinClusterRecordID {
 		// syncID<322680000000000 -> consider the syncID is from an old template.
@@ -59,16 +78,5 @@ func (g *implIIDGenerator) UpdateOnSync(syncID istructs.RecordID, t appdef.TypeK
 		// see https://github.com/voedger/voedger/issues/688
 		return
 	}
-	switch t {
-	case appdef.TypeKind_CDoc, appdef.TypeKind_CRecord:
-		g.nextCDocCRecordBaseID = syncID.BaseRecordID() + 1
-	case appdef.TypeKind_ODoc, appdef.TypeKind_ORecord:
-		if syncID.BaseRecordID() >= g.nextBaseID {
-			// we do not know the order the IDs were issued for ODoc with ORecords
-			// so let's bump if syncID is actually next
-			g.nextBaseID = syncID.BaseRecordID() + 1
-		}
-	default:
-		g.nextBaseID = syncID.BaseRecordID() + 1
-	}
+	g.Update(syncID.BaseRecordID(), t)
 }

@@ -90,7 +90,14 @@ type IIDGenerator interface {
 	// Returns next record ID for the given type
 	NextID(rawID RecordID, t appdef.IType) (storageID RecordID, err error)
 
+	// Updates next base record ID for the given type.
+	// ID should be base record ID, without register ID.
+	//
+	// Used during recovery.
+	Update(RecordID, appdef.TypeKind)
+
 	// Updates next base record ID from sync event for the given type.
+	// ID should be cluster record ID, not base record ID.
 	//
 	// Used during recovery.
 	UpdateOnSync(syncID RecordID, t appdef.TypeKind)

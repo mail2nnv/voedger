@@ -41,6 +41,10 @@ func (me *TSidsGeneratorType) NextID(tempId istructs.RecordID, _ appdef.IType) (
 	return storageID, nil
 }
 
+func (me *TSidsGeneratorType) Update(istructs.RecordID, appdef.TypeKind) {
+	panic("must not be called")
+}
+
 func (me *TSidsGeneratorType) UpdateOnSync(istructs.RecordID, appdef.TypeKind) {
 	panic("must not be called")
 }
