@@ -305,6 +305,20 @@ func TestRecovery(t *testing.T) {
 	require.Equal(istructs.NewRecordID(istructs.FirstBaseRecordID)+2, istructs.RecordID(respData["NewIDs"].(map[string]interface{})["2"].(float64)))
 	require.Equal(istructs.NewCDocCRecordID(istructs.FirstBaseRecordID)+5, istructs.RecordID(respData["NewIDs"].(map[string]interface{})["3"].(float64)))
 
+	t.Run("check recover with updated PRP", func(t *testing.T) {
+		for i := istructs.FirstOffset; i <= PartitionRecoveryPointRenewalPeriod; i++ {
+			_ = sendCUD(t, 1, app)
+		}
+		restartCmdProc(&app)
+		respData = sendCUD(t, 1, app)
+
+		require.EqualValues(5+PartitionRecoveryPointRenewalPeriod, respData["CurrentWLogOffset"].(float64))
+		rc := istructs.RecordID(PartitionRecoveryPointRenewalPeriod)
+		require.Equal(istructs.NewCDocCRecordID(istructs.FirstBaseRecordID)+6+2*rc, istructs.RecordID(respData["NewIDs"].(map[string]interface{})["1"].(float64))) //CDoc
+		require.Equal(istructs.NewRecordID(istructs.FirstBaseRecordID)+3+rc, istructs.RecordID(respData["NewIDs"].(map[string]interface{})["2"].(float64)))        //WDoc
+		require.Equal(istructs.NewCDocCRecordID(istructs.FirstBaseRecordID)+7+2*rc, istructs.RecordID(respData["NewIDs"].(map[string]interface{})["3"].(float64))) //CRecord
+	})
+
 	app.cancel()
 	<-app.done
 }

@@ -129,6 +129,7 @@ func ProvideServiceFactory(appParts appparts.IAppPartitions, tm coreutils.ITime,
 				pipeline.WireFunc("getIDGenerator", getIDGenerator),
 				pipeline.WireFunc("putPLog", cmdProc.putPLog),
 				pipeline.WireFunc("store", cmdProc.storeOp.DoSync),
+				pipeline.WireFunc("updatePRP", cmdProc.updatePRP),
 				pipeline.WireFunc("notifyAsyncActualizers", cmdProc.notifyAsyncActualizers),
 			)
 			// TODO: later make so that each partition has its own plogOffset, wsid has its own wlogOffset

@@ -6,6 +6,7 @@ package commandprocessor
 
 import (
 	"github.com/voedger/voedger/pkg/appdef"
+	"github.com/voedger/voedger/pkg/istructs"
 )
 
 var (
@@ -17,4 +18,10 @@ var (
 		appdef.OperationKind_Activate:   "ACTIVATE",
 		appdef.OperationKind_Deactivate: "DEACTIVATE",
 	}
+)
+
+const (
+	// The renewal period of the partition recovery point (number of events).
+	// Default is every 100 events.
+	PartitionRecoveryPointRenewalPeriod istructs.Offset = 100
 )

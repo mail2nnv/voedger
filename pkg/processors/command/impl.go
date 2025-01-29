@@ -243,14 +243,22 @@ func (cmdProc *cmdProc) recovery(ctx context.Context, cmd *cmdWorkpiece) (*appPa
 	if err != nil {
 		return nil, err
 	}
+	lastOfs := prp.PLogOffset()
+
 	ap := &appPartition{
 		prp:            prp,
 		workspaces:     map[istructs.WSID]*workspace{},
-		nextPLogOffset: istructs.FirstOffset,
+		nextPLogOffset: lastOfs + 1,
 	}
-	// for wsID, wsp := range prp.Workspaces() {
-	// 	ws := ap.getWorkspace(wsID)
-	// }
+
+	// use partition recovery point for ws initialization
+	for wsID, wsp := range ap.prp.Workspaces() {
+		ws := ap.getWorkspace(wsID)
+		ws.NextWLogOffset = wsp.WLogOffset() + 1
+		ws.idGenerator.Update(wsp.BaseRecordID(), appdef.TypeKind_ODoc)
+		ws.idGenerator.Update(wsp.BaseCRecordID(), appdef.TypeKind_CDoc)
+	}
+
 	var lastPLogEvent istructs.IPLogEvent
 	cb := func(plogOffset istructs.Offset, event istructs.IPLogEvent) (err error) {
 		ws := ap.getWorkspace(event.Workspace())
@@ -271,10 +279,19 @@ func (cmdProc *cmdProc) recovery(ctx context.Context, cmd *cmdWorkpiece) (*appPa
 			lastPLogEvent.Release() // TODO: eliminate if there will be a better solution, see https://github.com/voedger/voedger/issues/1348
 		}
 		lastPLogEvent = event
+
+		ap.prp.Update(
+			plogOffset,
+			event.Workspace(),
+			event.WLogOffset(),
+			ws.idGenerator.LastBaseID(appdef.TypeKind_WDoc),
+			ws.idGenerator.LastBaseID(appdef.TypeKind_CDoc),
+		)
+
 		return nil
 	}
 
-	if err := cmd.appStructs.Events().ReadPLog(ctx, cmd.cmdMes.PartitionID(), istructs.FirstOffset, istructs.ReadToTheEnd, cb); err != nil {
+	if err := cmd.appStructs.Events().ReadPLog(ctx, cmd.cmdMes.PartitionID(), ap.nextPLogOffset, istructs.ReadToTheEnd, cb); err != nil {
 		return nil, err
 	}
 
@@ -318,6 +335,26 @@ func (cmdProc *cmdProc) putPLog(_ context.Context, work pipeline.IWorkpiece) (er
 		cmd.appPartition.nextPLogOffset++
 	}
 	return
+}
+
+func (cmdProc *cmdProc) updatePRP(_ context.Context, work pipeline.IWorkpiece) error {
+	cmd := work.(*cmdWorkpiece)
+
+	plog := cmd.appPartition.nextPLogOffset - 1
+
+	cmd.appPartition.prp.Update(
+		plog,
+		cmd.pLogEvent.Workspace(),
+		cmd.workspace.NextWLogOffset-1,
+		cmd.workspace.idGenerator.LastBaseID(appdef.TypeKind_WDoc),
+		cmd.workspace.idGenerator.LastBaseID(appdef.TypeKind_CDoc),
+	)
+	if plog%PartitionRecoveryPointRenewalPeriod == 0 {
+		if err := cmd.appStructs.Recovers().Put(cmd.appPartition.prp); err != nil {
+			return fmt.Errorf("failed to put partition recovery point: %w, app: %v, partition: %v", err, cmd.cmdMes.AppQName(), cmd.cmdMes.PartitionID())
+		}
+	}
+	return nil
 }
 
 func getWSDesc(_ context.Context, work pipeline.IWorkpiece) (err error) {
