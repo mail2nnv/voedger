@@ -35,43 +35,52 @@ func TestIDGenerator(t *testing.T) {
 		storageID, err := idGen.NextID(1, appDef.Type(istructs.QNameCDoc))
 		require.NoError(err)
 		require.Equal(expectedCRecordID, storageID)
+		require.Equal(storageID.BaseRecordID(), idGen.LastBaseID(appdef.TypeKind_CDoc))
 
 		expectedCRecordID++
 		storageID, err = idGen.NextID(1, appDef.Type(istructs.QNameCDoc))
 		require.NoError(err)
 		require.Equal(expectedCRecordID, storageID)
+		require.Equal(storageID.BaseRecordID(), idGen.LastBaseID(appdef.TypeKind_CDoc))
 
 		expectedCRecordID++
 		storageID, err = idGen.NextID(1, appDef.Type(istructs.QNameCRecord))
 		require.NoError(err)
 		require.Equal(expectedCRecordID, storageID)
+		require.Equal(storageID.BaseRecordID(), idGen.LastBaseID(appdef.TypeKind_CRecord))
 
 		expectedRecordID := istructs.NewRecordID(istructs.FirstBaseRecordID)
 		storageID, err = idGen.NextID(1, appDef.Type(istructs.QNameWDoc))
 		require.NoError(err)
 		require.Equal(expectedRecordID, storageID)
+		require.Equal(storageID.BaseRecordID(), idGen.LastBaseID(appdef.TypeKind_WDoc))
 
 		expectedRecordID++
 		storageID, err = idGen.NextID(1, appDef.Type(istructs.QNameWDoc))
 		require.NoError(err)
 		require.Equal(expectedRecordID, storageID)
+		require.Equal(storageID.BaseRecordID(), idGen.LastBaseID(appdef.TypeKind_WDoc))
 	})
 
 	t.Run("UpdateOnSync", func(t *testing.T) {
 		qNames := []appdef.QName{istructs.QNameCDoc, istructs.QNameWDoc}
 		for _, qName := range qNames {
-			storageID, err := idGen.NextID(1, appDef.Type(qName))
+			tk := appDef.Type(qName)
+			storageID, err := idGen.NextID(1, tk)
 			require.NoError(err)
 
-			idGen.UpdateOnSync(storageID+1, appDef.Type(qName))
-			storageIDNew, err := idGen.NextID(1, appDef.Type(qName))
+			idGen.UpdateOnSync(storageID+1, tk.Kind())
+			require.Equal((storageID + 1).BaseRecordID(), idGen.LastBaseID(tk.Kind()))
+			storageIDNew, err := idGen.NextID(1, tk)
 			require.NoError(err)
 			require.Equal(storageID+2, storageIDNew)
+			require.Equal((storageID + 2).BaseRecordID(), idGen.LastBaseID(tk.Kind()))
 
-			idGen.UpdateOnSync(storageIDNew+100, appDef.Type(qName))
+			idGen.UpdateOnSync(storageIDNew+100, tk.Kind())
 			storageIDNew, err = idGen.NextID(1, appDef.Type(qName))
 			require.NoError(err)
 			require.Equal(storageID+103, storageIDNew)
+			require.Equal((storageID + 103).BaseRecordID(), idGen.LastBaseID(tk.Kind()))
 		}
 	})
 }
@@ -93,7 +102,7 @@ func TestIDGenCollision(t *testing.T) {
 
 	// server starts, 9999999999 record is met
 	storedRecID := istructs.RecordID(9999999999)
-	idGen.UpdateOnSync(storedRecID, tp)
+	idGen.UpdateOnSync(storedRecID, appdef.TypeKind_CDoc)
 
 	// let's work, query the next ID
 	newIDBeforeRestart, err := idGen.NextID(1, tp)
@@ -104,11 +113,11 @@ func TestIDGenCollision(t *testing.T) {
 	// server restarts 9B record is met again on recovery
 	idGen = NewIDGenerator()
 	storedRecID = istructs.RecordID(9999999999)
-	idGen.UpdateOnSync(storedRecID, tp)
+	idGen.UpdateOnSync(storedRecID, appdef.TypeKind_CDoc)
 	// then record 322690000000000 is met
 	storedRecID = istructs.RecordID(322690000000000)
 	log.Println("322690000000000.BaseID = ", storedRecID.BaseRecordID())
-	idGen.UpdateOnSync(storedRecID, tp) // its BaseRecordID is 0 which is <idGen.nextCDocCRecordBaseID(5000000000) so idGen.nextCDocCRecordBaseID is still 5000000000
+	idGen.UpdateOnSync(storedRecID, appdef.TypeKind_CDoc) // its BaseRecordID is 0 which is <idGen.nextCDocCRecordBaseID(5000000000) so idGen.nextCDocCRecordBaseID is still 5000000000
 	require.NoError(err)
 
 	// now let's work, query the next ID

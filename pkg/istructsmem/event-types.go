@@ -471,7 +471,7 @@ func (cud *cudType) regenerateIDsPlan(generator istructs.IIDGenerator) (newIDs n
 		id := rec.ID()
 		if !id.IsRaw() {
 			// storage IDs are allowed for sync events
-			generator.UpdateOnSync(id, rec.typ)
+			generator.UpdateOnSync(id, rec.typ.Kind())
 			continue
 		}
 

@@ -26,6 +26,12 @@ type TSidsGeneratorType struct {
 	nextPlogOffset istructs.Offset
 }
 
+func (me *TSidsGeneratorType) LastBaseID(appdef.TypeKind) istructs.RecordID {
+	me.lock.Lock()
+	defer me.lock.Unlock()
+	return me.nextID - 1
+}
+
 func (me *TSidsGeneratorType) NextID(tempId istructs.RecordID, _ appdef.IType) (storageID istructs.RecordID, err error) {
 	me.lock.Lock()
 	defer me.lock.Unlock()
@@ -35,7 +41,7 @@ func (me *TSidsGeneratorType) NextID(tempId istructs.RecordID, _ appdef.IType) (
 	return storageID, nil
 }
 
-func (me *TSidsGeneratorType) UpdateOnSync(_ istructs.RecordID, _ appdef.IType) {
+func (me *TSidsGeneratorType) UpdateOnSync(istructs.RecordID, appdef.TypeKind) {
 	panic("must not be called")
 }
 

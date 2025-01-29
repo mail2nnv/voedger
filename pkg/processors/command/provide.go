@@ -37,6 +37,7 @@ type cmdProc struct {
 }
 
 type appPartition struct {
+	prp            istructs.IPartitionRecoveryPoint
 	workspaces     map[istructs.WSID]*workspace
 	nextPLogOffset istructs.Offset
 }

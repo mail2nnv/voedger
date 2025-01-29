@@ -227,7 +227,7 @@ func (cmdProc *cmdProc) buildCommandArgs(_ context.Context, work pipeline.IWorkp
 
 func updateIDGeneratorFromO(root istructs.IObject, findType appdef.FindType, idGen istructs.IIDGenerator) {
 	// new IDs only here because update is not allowed for ODocs in Args
-	idGen.UpdateOnSync(root.AsRecordID(appdef.SystemField_ID), findType(root.QName()))
+	idGen.UpdateOnSync(root.AsRecordID(appdef.SystemField_ID), findType(root.QName()).Kind())
 	for container := range root.Containers {
 		// order of containers here is the order in the schema
 		// but order in the request could be different
@@ -239,10 +239,18 @@ func updateIDGeneratorFromO(root istructs.IObject, findType appdef.FindType, idG
 }
 
 func (cmdProc *cmdProc) recovery(ctx context.Context, cmd *cmdWorkpiece) (*appPartition, error) {
+	prp, err := cmd.appStructs.Recovers().Get(cmd.cmdMes.PartitionID())
+	if err != nil {
+		return nil, err
+	}
 	ap := &appPartition{
+		prp:            prp,
 		workspaces:     map[istructs.WSID]*workspace{},
 		nextPLogOffset: istructs.FirstOffset,
 	}
+	// for wsID, wsp := range prp.Workspaces() {
+	// 	ws := ap.getWorkspace(wsID)
+	// }
 	var lastPLogEvent istructs.IPLogEvent
 	cb := func(plogOffset istructs.Offset, event istructs.IPLogEvent) (err error) {
 		ws := ap.getWorkspace(event.Workspace())
@@ -250,7 +258,7 @@ func (cmdProc *cmdProc) recovery(ctx context.Context, cmd *cmdWorkpiece) (*appPa
 		for rec := range event.CUDs {
 			if rec.IsNew() {
 				t := cmd.appStructs.AppDef().Type(rec.QName())
-				ws.idGenerator.UpdateOnSync(rec.ID(), t)
+				ws.idGenerator.UpdateOnSync(rec.ID(), t.Kind())
 			}
 		}
 		ao := event.ArgumentObject()

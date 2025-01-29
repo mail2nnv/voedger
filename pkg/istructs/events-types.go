@@ -84,8 +84,16 @@ type ICUDRow interface {
 }
 
 type IIDGenerator interface {
+	// Returns last base record ID for the given type
+	LastBaseID(appdef.TypeKind) RecordID
+
+	// Returns next record ID for the given type
 	NextID(rawID RecordID, t appdef.IType) (storageID RecordID, err error)
-	UpdateOnSync(syncID RecordID, t appdef.IType)
+
+	// Updates next base record ID from sync event for the given type.
+	//
+	// Used during recovery.
+	UpdateOnSync(syncID RecordID, t appdef.TypeKind)
 }
 
 type IRawEvent interface {

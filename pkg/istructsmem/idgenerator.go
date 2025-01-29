@@ -29,6 +29,13 @@ func NewIDGenerator() istructs.IIDGenerator {
 	return NewIDGeneratorWithHook(nil)
 }
 
+func (g implIIDGenerator) LastBaseID(t appdef.TypeKind) istructs.RecordID {
+	if t == appdef.TypeKind_CDoc || t == appdef.TypeKind_CRecord {
+		return g.nextCDocCRecordBaseID - 1
+	}
+	return g.nextBaseID - 1
+}
+
 func (g *implIIDGenerator) NextID(rawID istructs.RecordID, t appdef.IType) (storageID istructs.RecordID, err error) {
 	if t.Kind() == appdef.TypeKind_CDoc || t.Kind() == appdef.TypeKind_CRecord {
 		storageID = istructs.NewCDocCRecordID(g.nextCDocCRecordBaseID)
@@ -45,14 +52,14 @@ func (g *implIIDGenerator) NextID(rawID istructs.RecordID, t appdef.IType) (stor
 	return storageID, nil
 }
 
-func (g *implIIDGenerator) UpdateOnSync(syncID istructs.RecordID, t appdef.IType) {
+func (g *implIIDGenerator) UpdateOnSync(syncID istructs.RecordID, t appdef.TypeKind) {
 	if syncID < istructs.MinClusterRecordID {
 		// syncID<322680000000000 -> consider the syncID is from an old template.
 		// ignore IDs from external registers
 		// see https://github.com/voedger/voedger/issues/688
 		return
 	}
-	switch t.Kind() {
+	switch t {
 	case appdef.TypeKind_CDoc, appdef.TypeKind_CRecord:
 		g.nextCDocCRecordBaseID = syncID.BaseRecordID() + 1
 	case appdef.TypeKind_ODoc, appdef.TypeKind_ORecord:
