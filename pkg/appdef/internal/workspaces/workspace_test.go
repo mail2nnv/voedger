@@ -14,7 +14,6 @@ import (
 	"github.com/voedger/voedger/pkg/appdef"
 	"github.com/voedger/voedger/pkg/appdef/builder"
 	"github.com/voedger/voedger/pkg/appdef/filter"
-	"github.com/voedger/voedger/pkg/appdef/internal/workspaces"
 	"github.com/voedger/voedger/pkg/goutils/testingu/require"
 )
 
@@ -799,19 +798,4 @@ func Test_WorkspaceGrantRevokePanics(t *testing.T) {
 	}, require.Is(appdef.ErrNotFoundError), require.Has(unknown))
 	require.Panics(func() { wsb.RevokeAll(filter.AllFunctions(), unknown) },
 		require.Is(appdef.ErrNotFoundError), require.Has(unknown))
-}
-
-func Test_AddWorkspace(t *testing.T) {
-	require := require.New(t)
-
-	adb := builder.New()
-
-	ww := workspaces.MakeWithWorkspaces()
-
-	wsName := appdef.NewQName("test", "workspace")
-	ws := workspaces.AddWorkspace(adb.AppDef(), &ww, wsName)
-
-	require.NotNil(ws)
-
-	var _ appdef.IWorkspace = ws
 }

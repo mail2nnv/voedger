@@ -22,8 +22,6 @@ func MakeWithWorkspaces() WithWorkspaces {
 	return WithWorkspaces{list: NewWorkspaces()}
 }
 
-func (ww *WithWorkspaces) AppendWorkspace(ws appdef.IWorkspace) { ww.list.Add(ws) }
-
 func (ww *WithWorkspaces) Build() (err error) {
 	for _, ws := range ww.Workspaces() {
 		err = errors.Join(err,
@@ -91,10 +89,4 @@ func (wb *WorkspacesBuilder) AlterWorkspace(name appdef.QName) appdef.IWorkspace
 		panic(appdef.ErrNotFound("workspace «%v»", name))
 	}
 	return NewWorkspaceBuilder(ws.(*Workspace))
-}
-
-func AddWorkspace(app appdef.IAppDef, ww *WithWorkspaces, name appdef.QName) *Workspace {
-	ws := NewWorkspace(app, name)
-	ww.list.Add(ws)
-	return ws
 }
