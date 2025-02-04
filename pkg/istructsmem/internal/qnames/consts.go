@@ -14,6 +14,11 @@ const (
 	QNameIDCommandCUD
 	QNameIDForCorruptedData
 
+	QNameID_PlogOffsetSeq
+	QNameID_WlogOffsetSeq
+	QNameID_RecIDSeq
+	QNameID_CRecIDSeq
+
 	QNameIDSysLast QNameID = 0xFF
 )
 

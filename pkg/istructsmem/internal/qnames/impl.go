@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/voedger/voedger/pkg/appdef"
+	"github.com/voedger/voedger/pkg/appdef/sys"
 	"github.com/voedger/voedger/pkg/istorage"
 	"github.com/voedger/voedger/pkg/istructs"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/consts"
@@ -69,10 +70,16 @@ func (names *QNames) collectAll(appDef appdef.IAppDef) error {
 
 	// system QNames
 	names.
+		// istructs sys QNames
 		collectSys(appdef.NullQName, NullQNameID).
 		collectSys(istructs.QNameForError, QNameIDForError).
 		collectSys(istructs.QNameCommandCUD, QNameIDCommandCUD).
-		collectSys(istructs.QNameForCorruptedData, QNameIDForCorruptedData)
+		collectSys(istructs.QNameForCorruptedData, QNameIDForCorruptedData).
+		// appdef sys QNames
+		collectSys(sys.PlogOffsetSeq, QNameID_PlogOffsetSeq).
+		collectSys(sys.WlogOffsetSeq, QNameID_WlogOffsetSeq).
+		collectSys(sys.RecIDSeq, QNameID_RecIDSeq).
+		collectSys(sys.CRecIDSeq, QNameID_CRecIDSeq)
 
 	var err error
 
