@@ -7,6 +7,6 @@ package sequencesimpl
 
 import "github.com/voedger/voedger/pkg/istructs"
 
-func New(pid istructs.PartitionID) *Sequences {
-	return new(pid)
+func New(vr istructs.IViewRecords, pid istructs.PartitionID) *Sequences {
+	return newSequences(vr, pid)
 }

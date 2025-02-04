@@ -17,26 +17,64 @@ import (
 //
 //	sequences.ISequences
 type Sequences struct {
-	pid istructs.PartitionID
+	vr      istructs.IViewRecords
+	pid     istructs.PartitionID
+	last    map[istructs.WSID]map[appdef.QName]uint64
+	changes *map[istructs.WSID]map[appdef.QName]uint64
+	view    *view
 }
 
-func new(pid istructs.PartitionID) *Sequences {
+func newSequences(vr istructs.IViewRecords, pid istructs.PartitionID) *Sequences {
 	return &Sequences{
-		pid: pid,
+		vr:   vr,
+		pid:  pid,
+		last: make(map[istructs.WSID]map[appdef.QName]uint64),
+		view: newView(vr, pid),
 	}
 }
 
 func (s *Sequences) Apply() {
-	// TODO
+	if changes := s.changes; changes != nil {
+		s.changes = nil
+		s.view.apply(changes)
+		for ws, ss := range *changes {
+			if _, ok := s.last[ws]; !ok {
+				s.last[ws] = make(map[appdef.QName]uint64)
+			}
+			for seq, last := range ss {
+				s.last[ws][seq] = last
+			}
+		}
+	}
 }
 
 func (s *Sequences) Discard() {
-	// TODO
+	s.changes = nil
 }
 
-func (s *Sequences) Next(istructs.WSID, appdef.QName) uint64 {
-	// TODO
-	return 0
+func (s *Sequences) Next(ws istructs.WSID, seq appdef.QName) uint64 {
+	if s.changes == nil {
+		s.changes = new(map[istructs.WSID]map[appdef.QName]uint64)
+	}
+
+	var (
+		ok   bool
+		ss   map[appdef.QName]uint64
+		last uint64
+	)
+
+	if ss, ok = (*s.changes)[ws]; !ok {
+		ss = make(map[appdef.QName]uint64)
+		(*s.changes)[ws] = ss
+	}
+
+	if last, ok = ss[seq]; !ok {
+		last = s.last[ws][seq]
+	}
+
+	ss[seq] = last + 1
+
+	return last
 }
 
 func (s *Sequences) Recovery(context.Context) {

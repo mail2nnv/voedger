@@ -10,19 +10,19 @@ import "github.com/voedger/voedger/pkg/appdef"
 // Sequences view
 var (
 	// Sequences view name
-	SequencesView appdef.QName = appdef.NewQName(appdef.SysPackage, "sequences")
+	SequencesView appdef.QName = appdef.NewQName(appdef.SysPackage, "Sequences")
 
 	// Sequence view fields
-	SequencesView_PID  appdef.FieldName = "pid"  // int64 partition id, pk
-	SequencesView_WSID appdef.FieldName = "wsid" // int64 workspace id, cc
-	SequencesView_Name appdef.FieldName = "name" // QName sequence name, cc
-	SequencesView_Last appdef.FieldName = "last" // int64 last value, value
+	SequencesView_PID  appdef.FieldName = "PID"  // int64 partition id, pk
+	SequencesView_WSID appdef.FieldName = "WSID" // int64 workspace id, cc
+	SequencesView_Name appdef.FieldName = "Seq"  // QName sequence name, cc
+	SequencesView_Last appdef.FieldName = "Last" // int64 last value, value
 
 	// Sequence names
-	PlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "plogOffsetSeq")
-	WlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "wlogOffsetSeq")
-	RecIDSeq      appdef.QName = appdef.NewQName(appdef.SysPackage, "recIDSeq")
-	CRecIDSeq     appdef.QName = appdef.NewQName(appdef.SysPackage, "cRecIDSeq")
+	PlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "PLogOffsetSeq")
+	WlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "WLogOffsetSeq")
+	RecIDSeq      appdef.QName = appdef.NewQName(appdef.SysPackage, "RecIDSeq")
+	CRecIDSeq     appdef.QName = appdef.NewQName(appdef.SysPackage, "CRecIDSeq")
 
 	// # Overall record size:
 	//	8+8+2+8 = 26 bytes.

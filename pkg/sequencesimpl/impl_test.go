@@ -13,6 +13,6 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	var _ sequences.ISequences = sequencesimpl.New(0)
+	var _ sequences.ISequences = sequencesimpl.New(nil, 0)
 	t.Skip("TODO")
 }
