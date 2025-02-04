@@ -9,11 +9,21 @@ import "github.com/voedger/voedger/pkg/appdef"
 
 // Sequences view
 var (
-	SequencesView      appdef.QName     = appdef.NewQName(appdef.SysPackage, "sequences")
+	// Sequences view name
+	SequencesView appdef.QName = appdef.NewQName(appdef.SysPackage, "sequences")
+
+	// Sequence view fields
 	SequencesView_PID  appdef.FieldName = "pid"  // int64 partition id, pk
 	SequencesView_WSID appdef.FieldName = "wsid" // int64 workspace id, cc
 	SequencesView_Name appdef.FieldName = "name" // QName sequence name, cc
 	SequencesView_Last appdef.FieldName = "last" // int64 last value, value
+
+	// Sequence names
+	PlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "plogOffsetSeq")
+	WlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "wlogOffsetSeq")
+	RecIDSeq      appdef.QName = appdef.NewQName(appdef.SysPackage, "recIDSeq")
+	CRecIDSeq     appdef.QName = appdef.NewQName(appdef.SysPackage, "cRecIDSeq")
+
 	// # Overall record size:
 	//	8+8+2+8 = 26 bytes.
 	//
@@ -27,7 +37,7 @@ var (
 	//
 	// # Max workspaces per partition:
 	//	Let we have only system sequences:
-	//	- sys.plog_ofs, (1)
-	//	- sys.wlog_ofs, sys.rec_id, sys.crec_id. (3 per ws)
+	//	- sys.plogOffsetSeq, (1)
+	//	- sys.wlogOffsetSeq, sys.recIDSeq, sys.cRecIDSeq. (3 per ws)
 	//	Maximum (806’596 - 1) / 3 = 268’865 workspaces per partition.
 )
