@@ -13,7 +13,7 @@ import (
 	"github.com/voedger/voedger/pkg/istructs"
 )
 
-type Sequences interface {
+type ISequences interface {
 	// Recovers sequence numbers from DB view and PLog.
 	// Should be called from partition deployment
 	Recovery(context.Context)
