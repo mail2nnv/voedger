@@ -76,8 +76,8 @@ func (names *QNames) collectAll(appDef appdef.IAppDef) error {
 		collectSys(istructs.QNameCommandCUD, QNameIDCommandCUD).
 		collectSys(istructs.QNameForCorruptedData, QNameIDForCorruptedData).
 		// appdef sys QNames
-		collectSys(sys.PlogOffsetSeq, QNameID_PlogOffsetSeq).
-		collectSys(sys.WlogOffsetSeq, QNameID_WlogOffsetSeq).
+		collectSys(sys.PLogOffsetSeq, QNameID_PlogOffsetSeq).
+		collectSys(sys.WLogOffsetSeq, QNameID_WlogOffsetSeq).
 		collectSys(sys.RecIDSeq, QNameID_RecIDSeq).
 		collectSys(sys.CRecIDSeq, QNameID_CRecIDSeq)
 

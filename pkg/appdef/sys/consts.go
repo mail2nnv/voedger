@@ -19,8 +19,8 @@ var (
 	SequencesView_Last appdef.FieldName = "Last" // int64 last value, value
 
 	// Sequence names
-	PlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "PLogOffsetSeq")
-	WlogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "WLogOffsetSeq")
+	PLogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "PLogOffsetSeq")
+	WLogOffsetSeq appdef.QName = appdef.NewQName(appdef.SysPackage, "WLogOffsetSeq")
 	RecIDSeq      appdef.QName = appdef.NewQName(appdef.SysPackage, "RecIDSeq")
 	CRecIDSeq     appdef.QName = appdef.NewQName(appdef.SysPackage, "CRecIDSeq")
 
