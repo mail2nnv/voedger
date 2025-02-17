@@ -26,7 +26,8 @@ func New(app appdef.IAppDef, buckets irates.IBuckets) *Limiter {
 // Return is specified resource (command, query or structure) usage limit is exceeded.
 //
 // If resource usage is exceeded then returns name of first exceeded limit.
-func (l *Limiter) Exceeded(resource appdef.QName, operation appdef.OperationKind, workspace istructs.WSID, remoteAddr string) (bool, appdef.QName) {
+// TODO: add UserScope support: ProfileWSID #3228
+func (l *Limiter) Exceeded(resource appdef.QName, operation appdef.OperationKind, workspace, profile istructs.WSID, remoteAddr string) (bool, appdef.QName) {
 	if limits, ok := l.limits[resource]; ok {
 		keys := make([]irates.BucketKey, 0, len(limits))
 		for _, limit := range limits {
@@ -36,6 +37,9 @@ func (l *Limiter) Exceeded(resource appdef.QName, operation appdef.OperationKind
 				}
 				if limit.Rate().Scope(appdef.RateScope_Workspace) {
 					key.Workspace = workspace
+				}
+				if limit.Rate().Scope(appdef.RateScope_User) {
+					key.ProfileWSID = profile
 				}
 				if limit.Rate().Scope(appdef.RateScope_IP) {
 					key.RemoteAddr = remoteAddr
