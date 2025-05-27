@@ -341,7 +341,7 @@ func (row *Row) collectErrorf(format string, a ...interface{}) {
 
 // containerID returns row container id
 func (row *Row) containerID() (id containers.ContainerID, err error) {
-	return row.appCfg.ContainerID(row.Container())
+	return row.appCfg.Containers().ID(row.Container())
 }
 
 // Returns specified typed field definition.
@@ -484,7 +484,7 @@ func (row *Row) setContainer(value string) {
 
 // setContainerID sets record container by ID. Useful from loadFromBytes()
 func (row *Row) setContainerID(value containers.ContainerID) (err error) {
-	cont, err := row.appCfg.cNames.Container(value)
+	cont, err := row.appCfg.Containers().Name(value)
 	if err != nil {
 		row.collectError(err)
 		return err
@@ -510,15 +510,15 @@ func (row *Row) setQName(value appdef.QName) {
 		return
 	}
 
-	row.clear()
+	row.Clear()
 
 	if value == appdef.NullQName {
 		return
 	}
 
-	t := row.appCfg.AppDef.Type(value)
+	t := row.appCfg.AppDef().Type(value)
 	if t == appdef.NullType {
-		row.collectError(ErrTypeNotFound(value))
+		row.collectError(errs.ErrTypeNotFound(value))
 		return
 	}
 
@@ -531,7 +531,7 @@ func (row *Row) setQNameID(value istructs.QNameID) (err error) {
 		return nil
 	}
 
-	row.clear()
+	row.Clear()
 
 	qName, err := row.appCfg.qNames.QName(value)
 	if err != nil {

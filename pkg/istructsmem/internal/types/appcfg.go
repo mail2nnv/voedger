@@ -17,6 +17,6 @@ type AppConfig interface {
 	AppDef() appdef.IAppDef
 	AppTokens() istructs.IAppTokens
 	DynoBufSchemes() *dynobuf.DynoBufSchemes
-	ContainerID(name string) (containers.ContainerID, error)
+	Containers() *containers.Containers
 	QNameID(appdef.QName) (istructs.QNameID, error)
 }
