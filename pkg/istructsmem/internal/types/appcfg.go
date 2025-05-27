@@ -10,6 +10,7 @@ import (
 	"github.com/voedger/voedger/pkg/istructs"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/containers"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/dynobuf"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/qnames"
 )
 
 // Application configuration interface used row types.
@@ -18,5 +19,5 @@ type AppConfig interface {
 	AppTokens() istructs.IAppTokens
 	DynoBufSchemes() *dynobuf.DynoBufSchemes
 	Containers() *containers.Containers
-	QNameID(appdef.QName) (istructs.QNameID, error)
+	QNames() *qnames.QNames
 }

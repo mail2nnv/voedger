@@ -29,8 +29,8 @@ func renameQName(storage istorage.IAppStorage, oldQName, newQName appdef.QName) 
 		return fmt.Errorf(errWrapFmt, oldQName, newQName, "unable to read versions", err)
 	}
 
-	qnames := New()
-	if err := qnames.Prepare(storage, vers, nil); err != nil {
+	qnames, err := New(storage, vers, nil)
+	if err != nil {
 		return fmt.Errorf(errWrapFmt, oldQName, newQName, "unable to read qnames", err)
 	}
 

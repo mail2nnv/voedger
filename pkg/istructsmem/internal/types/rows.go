@@ -173,7 +173,7 @@ func (row *Row) QNameID() (istructs.QNameID, error) {
 	if name == appdef.NullQName {
 		return istructs.NullQNameID, nil
 	}
-	return row.appCfg.QNameID(name)
+	return row.appCfg.QNames().ID(name)
 }
 
 // Checks is specified field is nullable (string- or []byte- type) and put value is nil or zero length.
@@ -293,7 +293,7 @@ func (row *Row) clarifyJSONValue(value any, kind appdef.DataKind) (any, error) {
 			if err != nil {
 				return nil, err
 			}
-			id, err := row.appCfg.QNameID(qName)
+			id, err := row.appCfg.QNames().ID(qName)
 			if err != nil {
 				return nil, err
 			}
@@ -301,7 +301,7 @@ func (row *Row) clarifyJSONValue(value any, kind appdef.DataKind) (any, error) {
 			binary.BigEndian.PutUint16(b, id)
 			return b, nil
 		case appdef.QName:
-			id, err := row.appCfg.QNameID(v)
+			id, err := row.appCfg.QNames().ID(v)
 			if err != nil {
 				return nil, err
 			}
@@ -533,16 +533,16 @@ func (row *Row) setQNameID(value istructs.QNameID) (err error) {
 
 	row.Clear()
 
-	qName, err := row.appCfg.qNames.QName(value)
+	qName, err := row.appCfg.QNames().QName(value)
 	if err != nil {
 		row.collectError(err)
 		return err
 	}
 
 	if qName != appdef.NullQName {
-		t := row.appCfg.AppDef.Type(qName)
+		t := row.appCfg.AppDef().Type(qName)
 		if t == appdef.NullType {
-			err = ErrTypeNotFound(qName)
+			err = errs.ErrTypeNotFound(qName)
 			row.collectError(err)
 			return err
 		}

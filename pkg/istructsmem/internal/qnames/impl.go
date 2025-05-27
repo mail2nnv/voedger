@@ -46,7 +46,7 @@ func (names *QNames) QName(id istructs.QNameID) (qName appdef.QName, err error) 
 }
 
 // Reads all application QNames from storage, add all system and application QNames and write result to storage if some changes. Must be called at application starts
-func (names *QNames) Prepare(storage istorage.IAppStorage, versions *vers.Versions, appDef appdef.IAppDef) error {
+func (names *QNames) prepare(storage istorage.IAppStorage, versions *vers.Versions, appDef appdef.IAppDef) error {
 	if err := names.load(storage, versions); err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (names *QNames) load(storage istorage.IAppStorage, versions *vers.Versions)
 	switch ver {
 	case vers.UnknownVersion: // no sys.QName storage exists
 		return nil
-	case ver01:
+	case Ver01:
 		return names.load01(storage)
 	}
 
@@ -158,13 +158,13 @@ func (names *QNames) load01(storage istorage.IAppStorage) error {
 
 		return nil
 	}
-	pKey := utils.ToBytes(consts.SysView_QNames, ver01)
+	pKey := utils.ToBytes(consts.SysView_QNames, Ver01)
 	return storage.Read(context.Background(), pKey, nil, nil, readQName)
 }
 
 // Stores all known QNames to storage
 func (names *QNames) store(storage istorage.IAppStorage, versions *vers.Versions) (err error) {
-	pKey := utils.ToBytes(consts.SysView_QNames, ver01)
+	pKey := utils.ToBytes(consts.SysView_QNames, Ver01)
 
 	batch := make([]istorage.BatchItem, 0)
 	for qName, id := range names.qNames {
@@ -183,8 +183,8 @@ func (names *QNames) store(storage istorage.IAppStorage, versions *vers.Versions
 		return fmt.Errorf("error store application QName IDs to storage: %w", err)
 	}
 
-	if ver := versions.Get(vers.SysQNamesVersion); ver != latestVersion {
-		if err = versions.Put(vers.SysQNamesVersion, latestVersion); err != nil {
+	if ver := versions.Get(vers.SysQNamesVersion); ver != LatestVersion {
+		if err = versions.Put(vers.SysQNamesVersion, LatestVersion); err != nil {
 			return fmt.Errorf("error store QNames system view version: %w", err)
 		}
 	}

@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package qnames
+package qnames_test
 
 import (
 	"testing"
@@ -16,6 +16,7 @@ import (
 	"github.com/voedger/voedger/pkg/istorage/mem"
 	istorageimpl "github.com/voedger/voedger/pkg/istorage/provider"
 	"github.com/voedger/voedger/pkg/istructs"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/qnames"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
 )
 
@@ -36,8 +37,8 @@ func TestQNamesBasicUsage(t *testing.T) {
 	doc.AddUnique(appdef.UniqueQName(testName, "f1"), []appdef.FieldName{"f1"})
 	appDef := adb.MustBuild()
 
-	names := New()
-	if err := names.Prepare(storage, versions, appDef); err != nil {
+	names, err := qnames.New(storage, versions, appDef)
+	if err != nil {
 		panic(err)
 	}
 
@@ -57,16 +58,16 @@ func TestQNamesBasicUsage(t *testing.T) {
 				panic(err)
 			}
 
-			otherNames := New()
-			if err := otherNames.Prepare(storage, versions, nil); err != nil {
+			otherNames, err := qnames.New(storage, versions, nil)
+			if err != nil {
 				panic(err)
 			}
 
-			id1, err := names.ID(testName)
+			id1, err := otherNames.ID(testName)
 			require.NoError(err)
 			require.Equal(id, id1)
 
-			n1, err := names.QName(id)
+			n1, err := otherNames.QName(id)
 			require.NoError(err)
 			require.Equal(testName, n1)
 		})

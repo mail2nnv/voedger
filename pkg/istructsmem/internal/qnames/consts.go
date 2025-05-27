@@ -12,7 +12,7 @@ const MaxAvailableQNameID = 0xFFFF
 
 // QNames system view versions
 const (
-	ver01 vers.VersionValue = vers.UnknownVersion + 1
+	Ver01 vers.VersionValue = vers.UnknownVersion + 1
 
-	latestVersion = ver01
+	LatestVersion = Ver01
 )

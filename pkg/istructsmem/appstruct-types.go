@@ -97,7 +97,6 @@ func newAppConfig(name appdef.AppQName, id istructs.ClusterAppID, def appdef.IAp
 	cfg.dynoSchemes = dynobuf.New()
 
 	cfg.versions = vers.New()
-	cfg.qNames = qnames.New()
 	cfg.singletons = singletons.New()
 
 	cfg.FunctionRateLimits = functionRateLimits{
@@ -151,9 +150,11 @@ func (cfg *AppConfigType) prepare(buckets irates.IBuckets, appStorage istorage.I
 	}
 
 	// prepare QNames
-	if err := cfg.qNames.Prepare(cfg.storage, cfg.versions, cfg.AppDef); err != nil {
-		return err
+	qns, err := qnames.New(cfg.storage, cfg.versions, cfg.AppDef)
+	if err != nil {
+		return fmt.Errorf("%v: unable prepare qnames: %w", cfg.Name, err)
 	}
+	cfg.qNames = qns
 
 	// prepare container names
 	conts, err := containers.New(cfg.storage, cfg.versions, cfg.AppDef)

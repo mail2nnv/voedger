@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package qrename
+package qrename_test
 
 import (
 	"testing"
@@ -16,6 +16,7 @@ import (
 	"github.com/voedger/voedger/pkg/istructsmem/internal/qnames"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/teststore"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
+	"github.com/voedger/voedger/pkg/istructsmem/qrename"
 )
 
 func TestRenameQName(t *testing.T) {
@@ -43,13 +44,12 @@ func TestRenameQName(t *testing.T) {
 		appDef, err := adb.Build()
 		require.NoError(err)
 
-		names := qnames.New()
-		err = names.Prepare(storage, versions, appDef)
+		_, err = qnames.New(storage, versions, appDef)
 		require.NoError(err)
 	})
 
 	t.Run("basic usage", func(t *testing.T) {
-		err := Rename(storage, oldQName, newQName)
+		err := qrename.Rename(storage, oldQName, newQName)
 		require.NoError(err)
 	})
 
@@ -58,8 +58,7 @@ func TestRenameQName(t *testing.T) {
 		err := versions.Prepare(storage)
 		require.NoError(err)
 
-		names := qnames.New()
-		err = names.Prepare(storage, versions, nil)
+		names, err := qnames.New(storage, versions, nil)
 		require.NoError(err)
 
 		t.Run("check old is deleted", func(t *testing.T) {

@@ -20,7 +20,7 @@ import (
 	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
 )
 
-func TestRenameQName(t *testing.T) {
+func TestRename(t *testing.T) {
 
 	require := require.New(t)
 
@@ -45,8 +45,7 @@ func TestRenameQName(t *testing.T) {
 		appDef, err := adb.Build()
 		require.NoError(err)
 
-		names := New()
-		err = names.Prepare(storage, versions, appDef)
+		_, err = New(storage, versions, appDef)
 		require.NoError(err)
 	})
 
@@ -60,8 +59,7 @@ func TestRenameQName(t *testing.T) {
 		err := versions.Prepare(storage)
 		require.NoError(err)
 
-		names := New()
-		err = names.Prepare(storage, versions, nil)
+		names, err := New(storage, versions, nil)
 		require.NoError(err)
 
 		t.Run("check old is deleted", func(t *testing.T) {
@@ -104,8 +102,7 @@ func TestRenameQName_Errors(t *testing.T) {
 		appDef, err := adb.Build()
 		require.NoError(err)
 
-		names := New()
-		err = names.Prepare(storage, versions, appDef)
+		_, err = New(storage, versions, appDef)
 		require.NoError(err)
 	})
 
@@ -138,7 +135,7 @@ func TestRenameQName_Errors(t *testing.T) {
 	})
 }
 
-func TestRenameQName_Fails(t *testing.T) {
+func TestRenameErrors(t *testing.T) {
 	require := require.New(t)
 
 	appName := appdef.NewAppQName("test", "app")
@@ -153,7 +150,7 @@ func TestRenameQName_Fails(t *testing.T) {
 		versions := vers.New()
 		err := versions.Prepare(storage)
 		require.NoError(err)
-		versions.Put(vers.SysQNamesVersion, latestVersion+1) // future version
+		versions.Put(vers.SysQNamesVersion, LatestVersion+1) // future version
 
 		storage.ScheduleGetError(testError, utils.ToBytes(consts.SysView_Versions), nil)
 
@@ -167,7 +164,7 @@ func TestRenameQName_Fails(t *testing.T) {
 		versions := vers.New()
 		err := versions.Prepare(storage)
 		require.NoError(err)
-		versions.Put(vers.SysQNamesVersion, latestVersion+1) // future version
+		versions.Put(vers.SysQNamesVersion, LatestVersion+1) // future version
 
 		err = Rename(storage, oldQName, newQName)
 		require.ErrorIs(err, vers.ErrorInvalidVersion)
@@ -189,8 +186,7 @@ func TestRenameQName_Fails(t *testing.T) {
 		appDef, err := adb.Build()
 		require.NoError(err)
 
-		names := New()
-		err = names.Prepare(storage, versions, appDef)
+		_, err = New(storage, versions, appDef)
 		require.NoError(err)
 	})
 
