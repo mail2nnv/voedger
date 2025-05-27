@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package containers
+package containers_test
 
 import (
 	"testing"
@@ -16,6 +16,7 @@ import (
 	"github.com/voedger/voedger/pkg/istorage/mem"
 	istorageimpl "github.com/voedger/voedger/pkg/istorage/provider"
 	"github.com/voedger/voedger/pkg/istructs"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/containers"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
 )
 
@@ -40,18 +41,18 @@ func Test_BasicUsage(t *testing.T) {
 		panic(err)
 	}
 
-	containers := New()
-	if err := containers.Prepare(storage, versions, appDef); err != nil {
+	conts, err := containers.New(storage, versions, appDef)
+	if err != nil {
 		panic(err)
 	}
 
 	require := require.New(t)
 	t.Run("basic Containers methods", func(t *testing.T) {
-		id, err := containers.ID(testName)
+		id, err := conts.ID(testName)
 		require.NoError(err)
-		require.NotEqual(NullContainerID, id)
+		require.NotEqual(containers.NullContainerID, id)
 
-		n, err := containers.Container(id)
+		n, err := conts.Name(id)
 		require.NoError(err)
 		require.Equal(testName, n)
 
@@ -61,16 +62,16 @@ func Test_BasicUsage(t *testing.T) {
 				panic(err)
 			}
 
-			otherContainers := New()
-			if err := otherContainers.Prepare(storage, versions, nil); err != nil {
+			otherConts, err := containers.New(storage, versions, nil)
+			if err != nil {
 				panic(err)
 			}
 
-			id1, err := containers.ID(testName)
+			id1, err := otherConts.ID(testName)
 			require.NoError(err)
 			require.Equal(id, id1)
 
-			n1, err := containers.Container(id)
+			n1, err := otherConts.Name(id)
 			require.NoError(err)
 			require.Equal(testName, n1)
 		})

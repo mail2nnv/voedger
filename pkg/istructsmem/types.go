@@ -17,6 +17,7 @@ import (
 
 	"github.com/voedger/voedger/pkg/appdef"
 	"github.com/voedger/voedger/pkg/istructs"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/checkconstraints"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/containers"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/dynobuf"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/utils"
@@ -307,7 +308,7 @@ func (row *rowType) putValue(name appdef.FieldName, kind appdef.DataKind, value 
 		}
 	}
 
-	if err := checkConstraints(fld, fieldValue); err != nil {
+	if err := checkconstraints.Check(fld, fieldValue); err != nil {
 		row.collectError(err)
 		return
 	}
@@ -356,7 +357,7 @@ func (row *rowType) setContainer(value string) {
 
 // setContainerID sets record container by ID. Useful from loadFromBytes()
 func (row *rowType) setContainerID(value containers.ContainerID) (err error) {
-	cont, err := row.appCfg.cNames.Container(value)
+	cont, err := row.appCfg.cNames.Name(value)
 	if err != nil {
 		row.collectError(err)
 		return err

@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package rows
+package types
 
 const (
 	// byte codec versions
@@ -14,3 +14,14 @@ const (
 	// !do not forget to actualize last codec version!
 	codec_LastVersion = codec_RDB_2
 )
+
+// system fields mask values
+const (
+	sfm_ID        = uint16(1 << 0)
+	sfm_ParentID  = uint16(1 << 1)
+	sfm_Container = uint16(1 << 2)
+	sfm_IsActive  = uint16(1 << 3)
+)
+
+// maskString is character to mask values in string cell, used for obfuscate unlogged command arguments data
+const maskString = "*"

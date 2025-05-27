@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package containers
+package containers_test
 
 import (
 	"errors"
@@ -19,12 +19,13 @@ import (
 	istorageimpl "github.com/voedger/voedger/pkg/istorage/provider"
 	"github.com/voedger/voedger/pkg/istructs"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/consts"
+	"github.com/voedger/voedger/pkg/istructsmem/internal/containers"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/teststore"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/utils"
 	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
 )
 
-func TestContainers(t *testing.T) {
+func TestNew(t *testing.T) {
 	require := require.New(t)
 
 	appName := istructs.AppQName_test1_app1
@@ -40,8 +41,7 @@ func TestContainers(t *testing.T) {
 
 	containerName := "test"
 
-	containers := New()
-	if err := containers.Prepare(storage, versions,
+	conts, err := containers.New(storage, versions,
 		func() appdef.IAppDef {
 			objName := appdef.NewQName("test", "object")
 			adb := builder.New()
@@ -52,25 +52,27 @@ func TestContainers(t *testing.T) {
 			result, err := adb.Build()
 			require.NoError(err)
 			return result
-		}()); err != nil {
+		}())
+
+	if err != nil {
 		panic(err)
 	}
 
 	t.Run("basic Containers methods", func(t *testing.T) {
 
-		check := func(containers *Containers, name string) ContainerID {
-			id, err := containers.ID(name)
+		check := func(conts *containers.Containers, name string) containers.ContainerID {
+			id, err := conts.ID(name)
 			require.NoError(err)
-			require.NotEqual(NullContainerID, id)
+			require.NotEqual(containers.NullContainerID, id)
 
-			n, err := containers.Container(id)
+			n, err := conts.Name(id)
 			require.NoError(err)
 			require.Equal(name, n)
 
 			return id
 		}
 
-		id := check(containers, containerName)
+		id := check(conts, containerName)
 
 		t.Run("should be ok to load early stored names", func(t *testing.T) {
 			versions1 := vers.New()
@@ -78,8 +80,8 @@ func TestContainers(t *testing.T) {
 				panic(err)
 			}
 
-			containers1 := New()
-			if err := containers1.Prepare(storage, versions, nil); err != nil {
+			containers1, err := containers.New(storage, versions, nil)
+			if err != nil {
 				panic(err)
 			}
 
@@ -92,8 +94,7 @@ func TestContainers(t *testing.T) {
 				panic(err)
 			}
 
-			containers2 := New()
-			if err := containers2.Prepare(storage, versions,
+			containers2, err := containers.New(storage, versions,
 				func() appdef.IAppDef {
 					objName := appdef.NewQName("test", "object")
 					adb := builder.New()
@@ -104,7 +105,8 @@ func TestContainers(t *testing.T) {
 					result, err := adb.Build()
 					require.NoError(err)
 					return result
-				}()); err != nil {
+				}())
+			if err != nil {
 				panic(err)
 			}
 
@@ -113,19 +115,19 @@ func TestContainers(t *testing.T) {
 	})
 
 	t.Run("should be error if unknown container", func(t *testing.T) {
-		id, err := containers.ID("unknown")
-		require.Equal(NullContainerID, id)
-		require.ErrorIs(err, ErrContainerNotFound)
+		id, err := conts.ID("unknown")
+		require.Equal(containers.NullContainerID, id)
+		require.ErrorIs(err, containers.ErrContainerNotFound)
 	})
 
 	t.Run("should be error if unknown id", func(t *testing.T) {
-		n, err := containers.Container(ContainerID(MaxAvailableContainerID))
+		n, err := conts.Name(containers.ContainerID(containers.MaxAvailableContainerID))
 		require.Empty(n)
-		require.ErrorIs(err, ErrContainerIDNotFound)
+		require.ErrorIs(err, containers.ErrContainerIDNotFound)
 	})
 }
 
-func TestContainersPrepareErrors(t *testing.T) {
+func TestErrors(t *testing.T) {
 	require := require.New(t)
 
 	appName := istructs.AppQName_test1_app1
@@ -139,14 +141,13 @@ func TestContainersPrepareErrors(t *testing.T) {
 			panic(err)
 		}
 
-		versions.Put(vers.SysContainersVersion, latestVersion+1)
+		versions.Put(vers.SysContainersVersion, containers.LatestVersion+1)
 
-		names := New()
-		err := names.Prepare(storage, versions, nil)
+		_, err := containers.New(storage, versions, nil)
 		require.ErrorIs(err, vers.ErrorInvalidVersion)
 	})
 
-	t.Run("should be error if invalid Container loaded from system view ", func(t *testing.T) {
+	t.Run("should be error if invalid Container loaded from system view", func(t *testing.T) {
 		sp := istorageimpl.Provide(mem.Provide(testingu.MockTime))
 		storage, _ := sp.AppStorage(appName)
 
@@ -155,16 +156,15 @@ func TestContainersPrepareErrors(t *testing.T) {
 			panic(err)
 		}
 
-		versions.Put(vers.SysContainersVersion, latestVersion)
+		versions.Put(vers.SysContainersVersion, containers.LatestVersion)
 		const badName = "-test-error-name-"
-		storage.Put(utils.ToBytes(consts.SysView_Containers, ver01), []byte(badName), utils.ToBytes(ContainerID(512)))
+		storage.Put(utils.ToBytes(consts.SysView_Containers, containers.Ver01), []byte(badName), utils.ToBytes(containers.ContainerID(512)))
 
-		names := New()
-		err := names.Prepare(storage, versions, nil)
+		_, err := containers.New(storage, versions, nil)
 		require.ErrorIs(err, appdef.ErrInvalidError)
 	})
 
-	t.Run("should be ok if deleted Container loaded from system view ", func(t *testing.T) {
+	t.Run("should be ok if deleted Container loaded from system view", func(t *testing.T) {
 		sp := istorageimpl.Provide(mem.Provide(testingu.MockTime))
 		storage, _ := sp.AppStorage(appName)
 
@@ -173,15 +173,14 @@ func TestContainersPrepareErrors(t *testing.T) {
 			panic(err)
 		}
 
-		versions.Put(vers.SysContainersVersion, latestVersion)
-		storage.Put(utils.ToBytes(consts.SysView_Containers, ver01), []byte("deleted"), utils.ToBytes(NullContainerID))
+		versions.Put(vers.SysContainersVersion, containers.LatestVersion)
+		storage.Put(utils.ToBytes(consts.SysView_Containers, containers.Ver01), []byte("deleted"), utils.ToBytes(containers.NullContainerID))
 
-		names := New()
-		err := names.Prepare(storage, versions, nil)
+		_, err := containers.New(storage, versions, nil)
 		require.NoError(err)
 	})
 
-	t.Run("should be error if invalid (small) ContainerID loaded from system view ", func(t *testing.T) {
+	t.Run("should be error if invalid (small) ContainerID loaded from system view", func(t *testing.T) {
 		sp := istorageimpl.Provide(mem.Provide(testingu.MockTime))
 		storage, _ := sp.AppStorage(appName)
 
@@ -190,12 +189,11 @@ func TestContainersPrepareErrors(t *testing.T) {
 			panic(err)
 		}
 
-		versions.Put(vers.SysContainersVersion, latestVersion)
-		storage.Put(utils.ToBytes(consts.SysView_Containers, ver01), []byte("test"), utils.ToBytes(ContainerID(1)))
+		versions.Put(vers.SysContainersVersion, containers.LatestVersion)
+		storage.Put(utils.ToBytes(consts.SysView_Containers, containers.Ver01), []byte("test"), utils.ToBytes(containers.ContainerID(1)))
 
-		names := New()
-		err := names.Prepare(storage, versions, nil)
-		require.ErrorIs(err, ErrWrongContainerID)
+		_, err := containers.New(storage, versions, nil)
+		require.ErrorIs(err, containers.ErrWrongContainerID)
 	})
 
 	t.Run("should be error if too many Containers", func(t *testing.T) {
@@ -207,22 +205,21 @@ func TestContainersPrepareErrors(t *testing.T) {
 			panic(err)
 		}
 
-		names := New()
-		err := names.Prepare(storage, versions,
+		_, err := containers.New(storage, versions,
 			func() appdef.IAppDef {
 				adb := builder.New()
 				adb.AddPackage("test", "test.com/test")
 				wsb := adb.AddWorkspace(appdef.NewQName("test", "workspace"))
 				qName := appdef.NewQName("test", "test")
 				obj := wsb.AddObject(qName)
-				for i := 0; i <= MaxAvailableContainerID; i++ {
+				for i := 0; i <= containers.MaxAvailableContainerID; i++ {
 					obj.AddContainer(fmt.Sprintf("cont_%d", i), qName, 0, 1)
 				}
 				result, err := adb.Build()
 				require.NoError(err)
 				return result
 			}())
-		require.ErrorIs(err, ErrContainerIDsExceeds)
+		require.ErrorIs(err, containers.ErrContainerIDsExceeds)
 	})
 
 	t.Run("should be error if write to storage failed", func(t *testing.T) {
@@ -237,10 +234,9 @@ func TestContainersPrepareErrors(t *testing.T) {
 				panic(err)
 			}
 
-			storage.SchedulePutError(writeError, utils.ToBytes(consts.SysView_Containers, ver01), []byte(containerName))
+			storage.SchedulePutError(writeError, utils.ToBytes(consts.SysView_Containers, containers.Ver01), []byte(containerName))
 
-			names := New()
-			err := names.Prepare(storage, versions,
+			_, err := containers.New(storage, versions,
 				func() appdef.IAppDef {
 					objName := appdef.NewQName("test", "object")
 					adb := builder.New()
@@ -265,8 +261,7 @@ func TestContainersPrepareErrors(t *testing.T) {
 
 			storage.SchedulePutError(writeError, utils.ToBytes(consts.SysView_Versions), utils.ToBytes(vers.SysContainersVersion))
 
-			names := New()
-			err := names.Prepare(storage, versions,
+			_, err := containers.New(storage, versions,
 				func() appdef.IAppDef {
 					objName := appdef.NewQName("test", "object")
 					adb := builder.New()

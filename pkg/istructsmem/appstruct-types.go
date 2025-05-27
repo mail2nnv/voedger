@@ -98,7 +98,6 @@ func newAppConfig(name appdef.AppQName, id istructs.ClusterAppID, def appdef.IAp
 
 	cfg.versions = vers.New()
 	cfg.qNames = qnames.New()
-	cfg.cNames = containers.New()
 	cfg.singletons = singletons.New()
 
 	cfg.FunctionRateLimits = functionRateLimits{
@@ -157,9 +156,11 @@ func (cfg *AppConfigType) prepare(buckets irates.IBuckets, appStorage istorage.I
 	}
 
 	// prepare container names
-	if err := cfg.cNames.Prepare(cfg.storage, cfg.versions, cfg.AppDef); err != nil {
-		return err
+	conts, err := containers.New(cfg.storage, cfg.versions, cfg.AppDef)
+	if err != nil {
+		return fmt.Errorf("%v: unable prepare containers: %w", cfg.Name, err)
 	}
+	cfg.cNames = conts
 
 	// prepare singleton CDocs
 	if err := cfg.singletons.Prepare(cfg.storage, cfg.versions, cfg.AppDef); err != nil {

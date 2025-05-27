@@ -3,7 +3,7 @@
  * @author: Nikolay Nikitin
  */
 
-package rows
+package types
 
 import (
 	"github.com/voedger/voedger/pkg/appdef"

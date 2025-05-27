@@ -2,7 +2,7 @@
  * Copyright (c) 2021-present Sigma-Soft, Ltd.
  */
 
-package errorstr
+package errs
 
 import (
 	"errors"

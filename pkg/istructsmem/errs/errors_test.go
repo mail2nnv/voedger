@@ -2,14 +2,14 @@
  * Copyright (c) 2021-present Sigma-Soft, Ltd.
  */
 
-package errorstr_test
+package errs_test
 
 import (
 	"errors"
 	"testing"
 
 	"github.com/voedger/voedger/pkg/goutils/testingu/require"
-	"github.com/voedger/voedger/pkg/istructsmem/errorstr"
+	"github.com/voedger/voedger/pkg/istructsmem/errs"
 )
 
 func Test_Enrich(t *testing.T) {
@@ -30,7 +30,7 @@ func Test_Enrich(t *testing.T) {
 	require := require.New(t)
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
-			err := errorstr.Enrich(testError, tt.arg, tt.args...)
+			err := errs.Enrich(testError, tt.arg, tt.args...)
 			require.Error(err)
 			require.Equal(tt.want, err.Error())
 		})

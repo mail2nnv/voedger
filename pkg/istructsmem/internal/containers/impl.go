@@ -18,7 +18,7 @@ import (
 	"github.com/voedger/voedger/pkg/istructsmem/internal/vers"
 )
 
-func newContainers() *Containers {
+func new() *Containers {
 	return &Containers{
 		containers: make(map[string]ContainerID),
 		ids:        make(map[ContainerID]string),
@@ -26,8 +26,8 @@ func newContainers() *Containers {
 	}
 }
 
-// Retrieve container for specified ID
-func (cnt *Containers) Container(id ContainerID) (name string, err error) {
+// Retrieve name for specified ID
+func (cnt *Containers) Name(id ContainerID) (string, error) {
 	name, ok := cnt.ids[id]
 	if ok {
 		return name, nil
@@ -45,12 +45,12 @@ func (cnt *Containers) ID(name string) (ContainerID, error) {
 }
 
 // Loads all container from storage, add all known system and application containers and store if some changes. Must be called at application starts
-func (cnt *Containers) Prepare(storage istorage.IAppStorage, versions *vers.Versions, appDef appdef.IAppDef) (err error) {
-	if err = cnt.load(storage, versions); err != nil {
+func (cnt *Containers) prepare(storage istorage.IAppStorage, versions *vers.Versions, appDef appdef.IAppDef) error {
+	if err := cnt.load(storage, versions); err != nil {
 		return err
 	}
 
-	if err = cnt.collectAll(appDef); err != nil {
+	if err := cnt.collectAll(appDef); err != nil {
 		return err
 	}
 
@@ -115,7 +115,7 @@ func (cnt *Containers) load(storage istorage.IAppStorage, versions *vers.Version
 	switch ver {
 	case vers.UnknownVersion: // no sys.Container storage exists
 		return nil
-	case ver01:
+	case Ver01:
 		return cnt.load01(storage)
 	}
 
@@ -149,13 +149,13 @@ func (cnt *Containers) load01(storage istorage.IAppStorage) error {
 		return nil
 	}
 
-	pKey := utils.ToBytes(consts.SysView_Containers, ver01)
+	pKey := utils.ToBytes(consts.SysView_Containers, Ver01)
 	return storage.Read(context.Background(), pKey, nil, nil, readName)
 }
 
 // Stores all known container to storage
 func (cnt *Containers) store(storage istorage.IAppStorage, versions *vers.Versions) (err error) {
-	pKey := utils.ToBytes(consts.SysView_Containers, latestVersion)
+	pKey := utils.ToBytes(consts.SysView_Containers, LatestVersion)
 
 	batch := make([]istorage.BatchItem, 0)
 	for name, id := range cnt.containers {
@@ -174,8 +174,8 @@ func (cnt *Containers) store(storage istorage.IAppStorage, versions *vers.Versio
 		return fmt.Errorf("error store application container IDs to storage: %w", err)
 	}
 
-	if ver := versions.Get(vers.SysContainersVersion); ver != latestVersion {
-		if err = versions.Put(vers.SysContainersVersion, latestVersion); err != nil {
+	if ver := versions.Get(vers.SysContainersVersion); ver != LatestVersion {
+		if err = versions.Put(vers.SysContainersVersion, LatestVersion); err != nil {
 			return fmt.Errorf("error store system Containers view version: %w", err)
 		}
 	}

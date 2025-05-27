@@ -12,7 +12,6 @@ type ContainerID uint16
 //
 //	Use ID() to obtain container ID by its name.
 //	Use Container() to obtain container name by its ID.
-//	Use Prepare() to load container IDs from storage.
 type Containers struct {
 	containers map[string]ContainerID
 	ids        map[ContainerID]string
