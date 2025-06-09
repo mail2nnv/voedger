@@ -31,16 +31,16 @@ import (
 	"github.com/voedger/voedger/pkg/sys/authnz"
 )
 
-func (vit *VIT) GetBLOB(appQName appdef.AppQName, wsid istructs.WSID, blobID istructs.RecordID, token string) *BLOB {
+func (vit *VIT) GetBLOB(appQName appdef.AppQName, wsid istructs.WSID, ownerRecord appdef.QName, ownerRecordField appdef.FieldName, ownerID istructs.RecordID, token string) *BLOB {
 	vit.T.Helper()
-	blobReader, err := vit.IFederation.ReadBLOB(appQName, wsid, blobID, coreutils.WithAuthorizeBy(token))
+	blobReader, err := vit.IFederation.ReadBLOB(appQName, wsid, ownerRecord, ownerRecordField, ownerID, coreutils.WithAuthorizeBy(token))
 	require.NoError(vit.T, err)
 	blobContent, err := io.ReadAll(blobReader)
 	require.NoError(vit.T, err)
 	return &BLOB{
-		Content:  blobContent,
-		Name:     blobReader.Name,
-		MimeType: blobReader.MimeType,
+		Content:     blobContent,
+		Name:        blobReader.Name,
+		ContentType: blobReader.ContentType,
 	}
 }
 
@@ -288,16 +288,16 @@ func (vit *VIT) SignIn(login Login, optFuncs ...signInOptFunc) (prn *Principal) 
 	deadline := time.Now().Add(getWorkspaceInitAwaitTimeout())
 	for time.Now().Before(deadline) {
 		body := fmt.Sprintf(`{"login": "%s","password": "%s"}`, login.Name, login.Pwd)
-		resp := vit.POST(fmt.Sprintf("api/v2/apps/%s/%s/auth/login", login.AppQName.Owner(), login.AppQName.Name()), body)
+		resp := vit.POST(fmt.Sprintf("api/v2/apps/%s/%s/auth/login", login.AppQName.Owner(), login.AppQName.Name()), body, coreutils.Expect409(), coreutils.WithExpectedCode(http.StatusOK))
+		if resp.HTTPResp.StatusCode == http.StatusConflict {
+			time.Sleep(workspaceQueryDelay)
+			continue
+		}
 		require.Equal(vit.T, http.StatusOK, resp.HTTPResp.StatusCode)
 		result := make(map[string]interface{})
 		err := json.Unmarshal([]byte(resp.Body), &result)
 		require.NoError(vit.T, err)
-		profileWSID := istructs.WSID(result["wsid"].(float64))
-		if profileWSID == 0 {
-			time.Sleep(workspaceQueryDelay)
-			continue
-		}
+		profileWSID := istructs.WSID(result["profileWSID"].(float64))
 		token := result["principalToken"].(string)
 		require.NotEmpty(vit.T, token)
 		return &Principal{

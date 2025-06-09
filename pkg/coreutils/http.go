@@ -162,6 +162,10 @@ func WithMethod(m string) ReqOptFunc {
 	}
 }
 
+func Expect204(expectErrorContains ...string) ReqOptFunc {
+	return WithExpectedCode(http.StatusNoContent, expectErrorContains...)
+}
+
 func Expect409(expected ...string) ReqOptFunc {
 	return WithExpectedCode(http.StatusConflict, expected...)
 }
@@ -371,7 +375,7 @@ reqLoop:
 		expectedSysErrorCode: opts.expectedSysErrorCode,
 		expectedHTTPCodes:    opts.expectedHTTPCodes,
 	}
-	if isCodeExpected && opts.responseHandler != nil {
+	if resp.StatusCode == http.StatusOK && isCodeExpected && opts.responseHandler != nil {
 		opts.responseHandler(resp)
 		return httpResponse, nil
 	}

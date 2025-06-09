@@ -908,7 +908,10 @@ func analyzeQuery(query *QueryStmt, c *iterateCtx) {
 		}
 
 	}
-	if query.Returns.Def != nil {
+
+	if query.Returns == nil {
+		c.stmtErr(&query.Pos, ErrQueryMustHaveReturn)
+	} else if query.Returns.Def != nil {
 		if err := resolveInCtx(*query.Returns.Def, c, func(*TypeStmt, *PackageSchemaAST) error { return nil }); err != nil {
 			c.stmtErr(&query.Returns.Def.Pos, err)
 		}
@@ -1125,6 +1128,10 @@ func analyzeJob(j *JobStmt, c *iterateCtx) {
 	}
 	if ws.workspace.GetName() != nameAppWorkspaceWS || ws.pkg.Name != appdef.SysPackage {
 		c.stmtErr(&j.Pos, ErrJobMustBeInAppWorkspace)
+	}
+	if j.CronSchedule == nil || *j.CronSchedule == "" {
+		c.stmtErr(&j.Pos, ErrJobWithoutCronSchedule)
+		return
 	}
 
 	parser := cron.NewParser(cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
@@ -1405,6 +1412,11 @@ func lookupField(items []TableItemExpr, name Ident, c *iterateCtx) (found bool) 
 		item := items[i]
 		if item.Field != nil {
 			if item.Field.Name == name {
+				return true
+			}
+		}
+		if item.RefField != nil {
+			if item.RefField.Name == name {
 				return true
 			}
 		}

@@ -20,7 +20,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/voedger/voedger/pkg/bus"
-	"github.com/voedger/voedger/pkg/coreutils/utils"
 	"github.com/voedger/voedger/pkg/goutils/logger"
 	"github.com/voedger/voedger/pkg/goutils/testingu"
 	"github.com/voedger/voedger/pkg/iblobstorage"
@@ -385,27 +384,53 @@ func (vit *VIT) PostWSSys(ws *AppWorkspace, funcName string, body string, opts .
 	return vit.PostApp(ws.Owner.AppQName, ws.WSID, funcName, body, opts...)
 }
 
-func (vit *VIT) UploadBLOB(appQName appdef.AppQName, wsid istructs.WSID, blobName string, blobMimeType string, blobContent []byte,
-	opts ...coreutils.ReqOptFunc) (blobID istructs.RecordID) {
+func (vit *VIT) UploadBLOB(appQName appdef.AppQName, wsid istructs.WSID, name string, contentType string, content []byte,
+	ownerRecord appdef.QName, ownerRecordField appdef.FieldName, opts ...coreutils.ReqOptFunc) (blobID istructs.RecordID) {
 	vit.T.Helper()
-	blobSUUID := vit.UploadTempBLOB(appQName, wsid, blobName, blobMimeType, blobContent, 0, opts...)
-	if len(blobSUUID) == 0 {
-		return istructs.NullRecordID
+	blobReader := iblobstorage.BLOBReader{
+		DescrType: iblobstorage.DescrType{
+			Name:             name,
+			ContentType:      contentType,
+			OwnerRecord:      ownerRecord,
+			OwnerRecordField: ownerRecordField,
+		},
+		ReadCloser: io.NopCloser(bytes.NewReader(content)),
 	}
-	blobIDUint64, err := strconv.ParseUint(string(blobSUUID), utils.DecimalBase, utils.BitSize64)
+
+	blobID, err := vit.IFederation.UploadBLOB(appQName, wsid, blobReader, opts...)
 	require.NoError(vit.T, err)
-	return istructs.RecordID(blobIDUint64)
+	return blobID
 }
 
-func (vit *VIT) UploadTempBLOB(appQName appdef.AppQName, wsid istructs.WSID, blobName string, blobMimeType string, blobContent []byte, duration iblobstorage.DurationType,
+func (vit *VIT) SqlQueryRows(ws *AppWorkspace, sqlQuery string, fmtArgs ...any) []map[string]interface{} {
+
+	vit.T.Helper()
+	body := fmt.Sprintf(`{"args":{"Query":"%s"},"elements":[{"fields":["Result"]}]}`, fmt.Sprintf(sqlQuery, fmtArgs...))
+	resp := vit.PostWS(ws, "q.sys.SqlQuery", body, coreutils.WithAuthorizeBy(ws.Owner.Token))
+	res := []map[string]interface{}{}
+	for _, elem := range resp.Sections[0].Elements {
+		m := map[string]interface{}{}
+		require.NoError(vit.T, json.Unmarshal([]byte(elem[0][0][0].(string)), &m))
+		res = append(res, m)
+	}
+	return res
+}
+
+func (vit *VIT) SqlQuery(ws *AppWorkspace, sqlQuery string, fmtArgs ...any) map[string]interface{} {
+	vit.T.Helper()
+	return vit.SqlQueryRows(ws, sqlQuery, fmtArgs...)[0]
+}
+
+
+func (vit *VIT) UploadTempBLOB(appQName appdef.AppQName, wsid istructs.WSID, name string, contentType string, content []byte, duration iblobstorage.DurationType,
 	opts ...coreutils.ReqOptFunc) (blobSUUID iblobstorage.SUUID) {
 	vit.T.Helper()
 	blobReader := iblobstorage.BLOBReader{
 		DescrType: iblobstorage.DescrType{
-			Name:     blobName,
-			MimeType: blobMimeType,
+			Name:        name,
+			ContentType: contentType,
 		},
-		ReadCloser: io.NopCloser(bytes.NewReader(blobContent)),
+		ReadCloser: io.NopCloser(bytes.NewReader(content)),
 	}
 	blobSUUID, err := vit.IFederation.UploadTempBLOB(appQName, wsid, blobReader, duration, opts...)
 	require.NoError(vit.T, err)
@@ -421,9 +446,10 @@ func (vit *VIT) Func(url string, body string, opts ...coreutils.ReqOptFunc) *cor
 
 // blob ReadCloser must be read out by the test
 // will be closed by the VIT
-func (vit *VIT) ReadBLOB(appQName appdef.AppQName, wsid istructs.WSID, blobID istructs.RecordID, optFuncs ...coreutils.ReqOptFunc) iblobstorage.BLOBReader {
+func (vit *VIT) ReadBLOB(appQName appdef.AppQName, wsid istructs.WSID, ownerRecord appdef.QName, ownerRecordField appdef.FieldName, ownerID istructs.RecordID,
+	optFuncs ...coreutils.ReqOptFunc) iblobstorage.BLOBReader {
 	vit.T.Helper()
-	reader, err := vit.IFederation.ReadBLOB(appQName, wsid, blobID, optFuncs...)
+	reader, err := vit.IFederation.ReadBLOB(appQName, wsid, ownerRecord, ownerRecordField, ownerID, optFuncs...)
 	require.NoError(vit.T, err)
 	vit.registerBLOBReaderCleanup(reader)
 	return reader
@@ -488,7 +514,7 @@ func (vit *VIT) WaitFor(consumer func() *coreutils.FuncResponse) *coreutils.Func
 	return nil
 }
 
-func (vit *VIT) refreshTokens() {
+func (vit *VIT) RefreshTokens() {
 	vit.T.Helper()
 	for _, appPrns := range vit.principals {
 		for _, prn := range appPrns {
@@ -521,7 +547,7 @@ func (vit *VIT) Now() time.Time {
 
 func (vit *VIT) TimeAdd(dur time.Duration) {
 	vit.mockTime.Add(dur)
-	vit.refreshTokens()
+	vit.RefreshTokens()
 }
 
 func (vit *VIT) NextName() string {
