@@ -33,7 +33,6 @@ import (
 	"github.com/voedger/voedger/pkg/istructs"
 	"github.com/voedger/voedger/pkg/istructsmem"
 	payloads "github.com/voedger/voedger/pkg/itokens-payloads"
-	"github.com/voedger/voedger/pkg/itokensjwt"
 	"github.com/voedger/voedger/pkg/state"
 	"github.com/voedger/voedger/pkg/state/smtptest"
 	"github.com/voedger/voedger/pkg/sys/authnz"
@@ -85,12 +84,9 @@ func newVit(t testing.TB, vitCfg *VITConfig, useCas bool, vvmLaunchOnly bool) *V
 	cfg.SequencesTrustLevel = isequencer.SequencesTrustLevel_0
 
 	cfg.Time = testingu.MockTime
-	if !coreutils.IsTest() {
-		cfg.SecretsReader = itokensjwt.ProvideTestSecretsReader(cfg.SecretsReader)
-	}
 
 	emailMessagesChan := make(chan smtptest.Message, 1) // must be buffered
-	cfg.ActualizerStateOpts = append(cfg.ActualizerStateOpts, state.WithEmailMessagesChan(emailMessagesChan))
+	cfg.ActualizerStateOpts = append(cfg.ActualizerStateOpts, state.WithEmailSenderOverride(emailMessagesChan))
 
 	vitPreConfig := &vitPreConfig{
 		vvmCfg:  &cfg,
@@ -301,6 +297,7 @@ func (vit *VIT) WS(appQName appdef.AppQName, wsName string) *AppWorkspace {
 func (vit *VIT) TearDown() {
 	vit.T.Helper()
 	vit.isFinalized = true
+	vit.T.Log("goroutines num before cleanup:", runtime.NumGoroutine())
 	for _, cleanup := range vit.cleanups {
 		cleanup(vit)
 	}
@@ -420,7 +417,6 @@ func (vit *VIT) SqlQuery(ws *AppWorkspace, sqlQuery string, fmtArgs ...any) map[
 	vit.T.Helper()
 	return vit.SqlQueryRows(ws, sqlQuery, fmtArgs...)[0]
 }
-
 
 func (vit *VIT) UploadTempBLOB(appQName appdef.AppQName, wsid istructs.WSID, name string, contentType string, content []byte, duration iblobstorage.DurationType,
 	opts ...coreutils.ReqOptFunc) (blobSUUID iblobstorage.SUUID) {
